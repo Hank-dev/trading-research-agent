@@ -3,6 +3,18 @@ from dataclasses import dataclass
 
 from dotenv import load_dotenv
 
+# --- Backtest assumptions: single source of truth ---------------------------
+# Every spec (single-asset, portfolio, combined-book) defaults to these unless
+# explicitly overridden. Keep them here, not duplicated per schema, so a change
+# to the assumed cost model applies everywhere and cannot silently drift.
+DEFAULT_INITIAL_CASH = 10_000.0
+DEFAULT_COMMISSION_PCT = 0.001   # 0.1% per trade
+DEFAULT_SLIPPAGE_PCT = 0.0005    # 0.05% per trade
+
+# Trailing fraction of the date range reserved as a held-out lockbox for the
+# out-of-sample confirmation gate (used by robustness stress-testing).
+DEFAULT_LOCKBOX_PCT = 0.20
+
 
 @dataclass(frozen=True)
 class Settings:

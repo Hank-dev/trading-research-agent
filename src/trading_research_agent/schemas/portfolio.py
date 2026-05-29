@@ -2,6 +2,11 @@ from enum import Enum
 
 from pydantic import BaseModel, Field, model_validator
 
+from trading_research_agent.config import (
+    DEFAULT_COMMISSION_PCT,
+    DEFAULT_INITIAL_CASH,
+    DEFAULT_SLIPPAGE_PCT,
+)
 from trading_research_agent.schemas.strategy import BacktestEngine, MarketDataSource
 
 
@@ -38,9 +43,9 @@ class PortfolioSpec(BaseModel):
     start_date: str = Field(description="Backtest start date in YYYY-MM-DD format")
     end_date: str = Field(description="Backtest end date in YYYY-MM-DD format")
 
-    initial_cash: float = Field(default=10_000, gt=0)
-    commission_pct: float = Field(default=0.001, ge=0)
-    slippage_pct: float = Field(default=0.0005, ge=0)
+    initial_cash: float = Field(default=DEFAULT_INITIAL_CASH, gt=0)
+    commission_pct: float = Field(default=DEFAULT_COMMISSION_PCT, ge=0)
+    slippage_pct: float = Field(default=DEFAULT_SLIPPAGE_PCT, ge=0)
 
     benchmark: str = Field(default="equal_weight_buy_and_hold")
 

@@ -19,6 +19,7 @@ from typing import Any, TypedDict
 import pandas as pd
 
 from trading_research_agent.schemas.portfolio import PortfolioFamily, PortfolioSpec
+from trading_research_agent.config import DEFAULT_LOCKBOX_PCT
 from trading_research_agent.tools.dates import split_date_range
 from trading_research_agent.workflows.portfolio_research import run_portfolio_backtest
 
@@ -54,7 +55,7 @@ def run_stress_test(
     spec: PortfolioSpec,
     full_start: str,
     full_end: str,
-    base_lockbox_pct: float = 0.20,
+    base_lockbox_pct: float = DEFAULT_LOCKBOX_PCT,
     lockbox_grid: tuple[float, ...] = DEFAULT_LOCKBOX_GRID,
     panel: pd.DataFrame | None = None,
 ) -> StressResult:

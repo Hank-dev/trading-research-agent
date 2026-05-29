@@ -2,6 +2,12 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, model_validator
 
+from trading_research_agent.config import (
+    DEFAULT_COMMISSION_PCT,
+    DEFAULT_INITIAL_CASH,
+    DEFAULT_SLIPPAGE_PCT,
+)
+
 
 class CombinedBookSpec(BaseModel):
     """Evaluate whether a hedge overlay improves a core book.
@@ -30,9 +36,9 @@ class CombinedBookSpec(BaseModel):
     lookback_days: int = Field(default=100, description="SMA window for the regime trigger.")
     rebalance_days: int = Field(default=21)
 
-    initial_cash: float = Field(default=10_000, gt=0)
-    commission_pct: float = Field(default=0.001, ge=0)
-    slippage_pct: float = Field(default=0.0005, ge=0)
+    initial_cash: float = Field(default=DEFAULT_INITIAL_CASH, gt=0)
+    commission_pct: float = Field(default=DEFAULT_COMMISSION_PCT, ge=0)
+    slippage_pct: float = Field(default=DEFAULT_SLIPPAGE_PCT, ge=0)
 
     @model_validator(mode="after")
     def validate_book(self) -> "CombinedBookSpec":
