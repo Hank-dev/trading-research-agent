@@ -1,0 +1,22 @@
+{
+  "defaults": {
+    "family": "cross_sectional_momentum",
+    "lookback": 126,
+    "top_k": 2,
+    "rebalance": 21,
+    "start": "2010-01-01",
+    "end": "2025-01-01"
+  },
+  "portfolios": [
+    {
+      "name": "Classic cross asset",
+      "assets": ["SPY", "TLT", "DBC", "GLD"],
+      "hypothesis": "Relative strength may persist across equities, bonds, commodities, and gold."
+    },
+    {
+      "name": "Equity rates gold",
+      "assets": "SPY,QQQ,TLT,IEF,GLD",
+      "hypothesis": "A broader stock/rates/gold universe may improve cross-sectional selection."
+    }
+  ]
+}

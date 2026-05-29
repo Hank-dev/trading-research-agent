@@ -1,0 +1,44 @@
+[project]
+name = "trading-research-agent"
+version = "0.1.0"
+description = "LLM-assisted trading strategy research pipeline"
+requires-python = ">=3.11"
+dependencies = [
+  "langchain",
+  "langgraph",
+  "langchain-openai",
+  "pydantic>=2",
+  "pandas<3",
+  "numpy",
+  "yfinance",
+  "backtesting",
+  "vectorbt",
+  "matplotlib",
+  "python-dotenv",
+  "PyYAML",
+  "rich",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest",
+  "ruff",
+  "mypy",
+]
+
+[project.scripts]
+trade-research = "trading_research_agent.app:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+filterwarnings = [
+  "ignore:.*DataFrame.swapaxes.*:FutureWarning",
+]
