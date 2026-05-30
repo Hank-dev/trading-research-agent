@@ -414,6 +414,31 @@ def _load_ohlcv_fred_close_only(
     return daily[REQUIRED_OHLCV_COLUMNS]
 
 
+def load_fred_series(
+    series_id: str,
+    start: str,
+    end: str,
+    base_url: str = FRED_GRAPH_BASE_URL,
+) -> pd.Series:
+    """Load a raw FRED macro series (e.g. WALCL, FEDFUNDS, M2SL) as a date-indexed
+    Series. No look-ahead handling here — the caller is responsible for lagging by
+    the series' real publication delay."""
+    query = urlencode({"id": series_id})
+    csv_text = _fetch_text(f"{base_url}?{query}", source_name="FRED")
+    data = pd.read_csv(StringIO(csv_text))
+    _require_columns(data, ["observation_date", series_id])
+
+    data["Date"] = pd.to_datetime(data["observation_date"])
+    values = pd.to_numeric(data[series_id].replace(".", pd.NA), errors="coerce")
+    series = pd.Series(values.to_numpy(), index=data["Date"]).dropna().sort_index()
+    start_ts = pd.Timestamp(start)
+    end_ts = pd.Timestamp(end)
+    series = series[(series.index >= start_ts) & (series.index <= end_ts)]
+    if series.empty:
+        raise ValueError(f"FRED series {series_id} returned no data for {start}..{end}")
+    return series
+
+
 def load_ohlcv_coingecko(
     asset: str,
     start: str,

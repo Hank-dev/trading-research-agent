@@ -1,0 +1,130 @@
+{
+  "defaults": {
+    "start": "2007-01-01",
+    "end": "2026-05-29",
+    "rebalance": 21
+  },
+  "portfolios": [
+    {
+      "name": "Cross Asset Momentum 126 Top3",
+      "family": "cross_sectional_momentum",
+      "assets": ["SPY", "QQQ", "IWM", "EFA", "EEM", "TLT", "IEF", "GLD", "DBC", "VNQ", "LQD", "HYG"],
+      "lookback": 126,
+      "top_k": 3,
+      "hypothesis": "Medium-term relative strength across stocks, bonds, gold, commodities, real estate, and credit can beat equal-weight buy-and-hold by staying concentrated in the strongest liquid asset classes."
+    },
+    {
+      "name": "Cross Asset Momentum 252 Top3",
+      "family": "cross_sectional_momentum",
+      "assets": ["SPY", "QQQ", "IWM", "EFA", "EEM", "TLT", "IEF", "GLD", "DBC", "VNQ", "LQD", "HYG"],
+      "lookback": 252,
+      "top_k": 3,
+      "hypothesis": "One-year relative strength may reduce noise and capture persistent macro leadership across diversified liquid assets."
+    },
+    {
+      "name": "Cross Asset Momentum 126 Top4",
+      "family": "cross_sectional_momentum",
+      "assets": ["SPY", "QQQ", "IWM", "EFA", "EEM", "TLT", "IEF", "GLD", "DBC", "VNQ", "LQD", "HYG"],
+      "lookback": 126,
+      "top_k": 4,
+      "hypothesis": "Holding four leaders may keep enough concentration to beat equal-weight while reducing single-asset regime risk."
+    },
+    {
+      "name": "Fast Cross Asset Momentum 63 Top3",
+      "family": "cross_sectional_momentum",
+      "assets": ["SPY", "QQQ", "IWM", "EFA", "EEM", "TLT", "IEF", "GLD", "DBC", "VNQ", "LQD", "HYG"],
+      "lookback": 63,
+      "top_k": 3,
+      "hypothesis": "Quarterly relative strength may adapt faster when leadership changes across asset classes."
+    },
+    {
+      "name": "Quarterly Cross Asset Momentum 126 Top3",
+      "family": "cross_sectional_momentum",
+      "assets": ["SPY", "QQQ", "IWM", "EFA", "EEM", "TLT", "IEF", "GLD", "DBC", "VNQ", "LQD", "HYG"],
+      "lookback": 126,
+      "top_k": 3,
+      "rebalance": 63,
+      "hypothesis": "Slower rebalancing may preserve the same relative-strength effect with less turnover and less noise."
+    },
+    {
+      "name": "Dual Momentum 126 Top3",
+      "family": "dual_momentum",
+      "assets": ["SPY", "QQQ", "IWM", "EFA", "EEM", "TLT", "IEF", "GLD", "DBC", "VNQ", "LQD", "HYG"],
+      "lookback": 126,
+      "top_k": 3,
+      "hypothesis": "Relative strength plus an absolute momentum filter may keep the portfolio invested in winners and move unused allocations to cash in broad downtrends."
+    },
+    {
+      "name": "Dual Momentum 252 Top3",
+      "family": "dual_momentum",
+      "assets": ["SPY", "QQQ", "IWM", "EFA", "EEM", "TLT", "IEF", "GLD", "DBC", "VNQ", "LQD", "HYG"],
+      "lookback": 252,
+      "top_k": 3,
+      "hypothesis": "A one-year absolute and relative momentum filter may avoid weaker regimes while maintaining exposure to durable winners."
+    },
+    {
+      "name": "Volatility Scaled Momentum 126",
+      "family": "volatility_scaled_momentum",
+      "assets": ["SPY", "QQQ", "IWM", "EFA", "EEM", "TLT", "IEF", "GLD", "DBC", "VNQ", "LQD", "HYG"],
+      "lookback": 126,
+      "top_k": 3,
+      "hypothesis": "Absolute momentum with inverse-volatility sizing may improve robustness by preventing high-volatility assets from dominating the book."
+    },
+    {
+      "name": "Volatility Scaled Momentum 252",
+      "family": "volatility_scaled_momentum",
+      "assets": ["SPY", "QQQ", "IWM", "EFA", "EEM", "TLT", "IEF", "GLD", "DBC", "VNQ", "LQD", "HYG"],
+      "lookback": 252,
+      "top_k": 3,
+      "hypothesis": "A slower absolute momentum signal with inverse-volatility sizing may favor durable trends while controlling asset concentration."
+    },
+    {
+      "name": "Sector Momentum 126 Top3",
+      "family": "cross_sectional_momentum",
+      "assets": ["XLK", "XLF", "XLE", "XLU", "XLP", "XLV", "XLI", "XLY"],
+      "lookback": 126,
+      "top_k": 3,
+      "hypothesis": "Sector leadership persists enough that rotating among major US sectors can beat equal-weight sector buy-and-hold."
+    },
+    {
+      "name": "Sector Momentum 252 Top3",
+      "family": "cross_sectional_momentum",
+      "assets": ["XLK", "XLF", "XLE", "XLU", "XLP", "XLV", "XLI", "XLY"],
+      "lookback": 252,
+      "top_k": 3,
+      "hypothesis": "One-year sector relative strength may capture durable business-cycle leadership with less turnover."
+    },
+    {
+      "name": "Equity Region Momentum 126 Top3",
+      "family": "cross_sectional_momentum",
+      "assets": ["SPY", "QQQ", "IWM", "EFA", "EEM", "VNQ"],
+      "lookback": 126,
+      "top_k": 3,
+      "hypothesis": "Rotating among US large-cap, Nasdaq, small-cap, developed international, emerging markets, and real estate may beat diversified equity buy-and-hold when regional leadership persists."
+    },
+    {
+      "name": "Bond Credit Momentum 126 Top2",
+      "family": "cross_sectional_momentum",
+      "assets": ["TLT", "IEF", "LQD", "HYG"],
+      "lookback": 126,
+      "top_k": 2,
+      "hypothesis": "Relative strength across duration and credit risk may capture rate and credit cycles better than equal-weight bond and credit exposure."
+    },
+    {
+      "name": "Classic Low Correlation Momentum 126 Top2",
+      "family": "cross_sectional_momentum",
+      "assets": ["SPY", "TLT", "DBC", "GLD"],
+      "lookback": 126,
+      "top_k": 2,
+      "hypothesis": "A compact universe of equities, long Treasuries, commodities, and gold may make the momentum signal cleaner and more robust than a broader noisy universe."
+    },
+    {
+      "name": "Classic Low Correlation Dual Momentum 126 Top2",
+      "family": "dual_momentum",
+      "assets": ["SPY", "TLT", "DBC", "GLD"],
+      "lookback": 126,
+      "top_k": 2,
+      "hypothesis": "Adding an absolute momentum filter to the compact low-correlation universe may preserve upside while avoiding broad negative-trend regimes."
+    }
+  ]
+}

@@ -12,6 +12,7 @@ You must choose exactly one portfolio_family per entry:
 - dual_momentum: cross-sectional momentum, but only hold assets with positive trailing return; otherwise that allocation sits in cash.
 - equal_weight_trend: equal-weight each asset, but only hold it while above its own moving average.
 - time_series_momentum: AQR-style; hold each asset's equal-weight slice only while its own trailing return is positive, else cash. Good for crisis-defensive baskets spanning equities, bonds, gold, commodities.
+- volatility_scaled_momentum: managed-futures-style; hold assets with positive trailing return, but size eligible assets by inverse recent volatility so BTC/oil-level volatility does not dominate the book.
 - crisis_hedge: EXACTLY 2 assets [core_risk_asset, volatility_hedge]. Hold the core while above its own SMA; on a break below, exit to cash and hold a capped `hedge_weight` slice of the volatility hedge. Requires hedge_weight in (0, 0.5]. Use ONLY for explicit crisis-hedge / tail-protection requests.
 
 Crisis-hedge / volatility guidance:

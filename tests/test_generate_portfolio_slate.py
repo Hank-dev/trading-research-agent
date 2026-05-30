@@ -26,6 +26,11 @@ def test_generate_portfolio_slate_rejects_zero_size() -> None:
         gps.generate_portfolio_slate("idea", 0)
 
 
+def test_portfolio_slate_prompt_includes_volatility_scaled_momentum() -> None:
+    assert "volatility_scaled_momentum" in gps.SLATE_PROMPT
+    assert "inverse recent volatility" in gps.SLATE_PROMPT
+
+
 def test_generate_portfolio_slate_returns_specs(monkeypatch) -> None:
     expected = gps.PortfolioSlate(portfolios=[make_spec("A"), make_spec("B")])
 

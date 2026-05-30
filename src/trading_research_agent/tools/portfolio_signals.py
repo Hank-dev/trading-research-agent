@@ -21,6 +21,9 @@ from trading_research_agent.schemas.portfolio import PortfolioFamily, PortfolioS
 from trading_research_agent.tools.indicators import sma
 
 
+_VOLATILITY_SCALING_WINDOW = 60
+
+
 def compute_target_weights(close: pd.DataFrame, spec: PortfolioSpec) -> pd.DataFrame:
     """Build the (dates x assets) target-weight matrix for a PortfolioSpec."""
     if close.shape[1] < 2:
@@ -46,6 +49,8 @@ def _target_row(close: pd.DataFrame, i: int, spec: PortfolioSpec) -> pd.Series:
         return _equal_weight_trend_row(close, i, spec)
     if spec.portfolio_family == PortfolioFamily.TIME_SERIES_MOMENTUM:
         return _time_series_momentum_row(close, i, spec)
+    if spec.portfolio_family == PortfolioFamily.VOLATILITY_SCALED_MOMENTUM:
+        return _volatility_scaled_momentum_row(close, i, spec)
     if spec.portfolio_family == PortfolioFamily.CRISIS_HEDGE:
         return _crisis_hedge_row(close, i, spec)
     return _momentum_row(close, i, spec)
@@ -94,6 +99,33 @@ def _time_series_momentum_row(close: pd.DataFrame, i: int, spec: PortfolioSpec) 
     target = pd.Series(0.0, index=close.columns)
     if on.any():
         target[on] = 1.0 / len(close.columns)
+    return target
+
+
+def _volatility_scaled_momentum_row(close: pd.DataFrame, i: int, spec: PortfolioSpec) -> pd.Series:
+    # Managed-futures-style absolute momentum with inverse-volatility sizing.
+    # Eligible assets have positive trailing return; weights among eligible names
+    # are proportional to 1 / recent realized volatility and sum to 1.0.
+    lookback_close = close.iloc[i - spec.lookback_days]
+    current_close = close.iloc[i]
+    trailing_return = (current_close / lookback_close) - 1.0
+    eligible = trailing_return > 0.0
+
+    target = pd.Series(0.0, index=close.columns)
+    if not eligible.any():
+        return target
+
+    vol_window = min(_VOLATILITY_SCALING_WINDOW, spec.lookback_days)
+    recent_returns = close.pct_change().iloc[i - vol_window + 1 : i + 1]
+    realized_vol = recent_returns.std(ddof=0)
+    inverse_vol = (1.0 / realized_vol.where(realized_vol > 0.0)).replace(
+        [np.inf, -np.inf], np.nan
+    )
+    scaled = inverse_vol[eligible].dropna()
+    if scaled.empty or scaled.sum() <= 0.0:
+        return target
+
+    target[scaled.index] = scaled / scaled.sum()
     return target
 
 

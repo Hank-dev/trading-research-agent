@@ -117,6 +117,18 @@ Run several exact universes from a file:
 trade-research --portfolio-batch examples/portfolio_batch.json --lockbox-pct 0.2
 ```
 
+Volatility-scaled momentum is useful for mixed universes that include high-volatility
+assets such as BTC or oil:
+
+```bash
+trade-research --portfolio-spec \
+  --assets GLD,SPY,USO,TLT,BTC-USD \
+  --family volatility_scaled_momentum \
+  --lookback 126 --rebalance 21 \
+  --start 2015-01-01 --end 2026-05-29 \
+  --lockbox-pct 0.2
+```
+
 Batch files can be JSON or YAML:
 
 ```json
@@ -142,6 +154,7 @@ Supported portfolio families:
 - `dual_momentum` — cross-sectional momentum with an absolute filter: only hold assets whose own trailing return is positive, otherwise sit in cash (Antonacci-style defense).
 - `equal_weight_trend` — equal-weight each asset, but only while it is above its own moving average.
 - `time_series_momentum` — hold each asset's equal-weight slice only while its own trailing return is positive.
+- `volatility_scaled_momentum` — hold assets with positive trailing return, sized by inverse recent volatility so high-volatility assets do not dominate.
 - `crisis_hedge` — two-asset core/volatility-hedge rule with `--hedge-weight`.
 
 Notes:

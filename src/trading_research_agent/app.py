@@ -104,6 +104,19 @@ def main(argv: list[str] | None = None) -> int:
             _print_history_suggestion(console, summary)
         return 0
 
+    if args.budget:
+        from trading_research_agent.tools.trial_budget import assess_trial_budget, format_budget
+
+        budget = assess_trial_budget(load_history())
+        console.print(Panel(format_budget(budget), title="Cumulative Trial Budget"))
+        return 0
+
+    if args.macro_regime:
+        return _run_macro_regime_mode(console, args, parser)
+
+    if args.sweep:
+        return _run_sweep_mode(console, args, parser)
+
     if args.suggest:
         parser.error("--suggest must be used together with --history")
 
@@ -286,6 +299,63 @@ def _run_portfolio_batch_mode(
     return 1 if had_errors else 0
 
 
+def _run_macro_regime_mode(console: Console, args: Any, parser: argparse.ArgumentParser) -> int:
+    from trading_research_agent.workflows.macro_regime import format_macro_regime, run_macro_regime
+
+    if not args.start or not args.end:
+        parser.error("--macro-regime requires --start and --end")
+    if args.lockbox_pct <= 0:
+        parser.error("--macro-regime requires --lockbox-pct > 0 (e.g. --lockbox-pct 0.25)")
+
+    try:
+        result = run_macro_regime(args.macro_regime, args.start, args.end, args.lockbox_pct)
+    except Exception as exc:
+        console.print(Panel(f"Macro-regime run failed: {exc}", title="Macro Regime"))
+        return 1
+
+    console.print(Panel(format_macro_regime(result), title="Macro Regime — frozen mapping"))
+    return 0
+
+
+def _run_sweep_mode(console: Console, args: Any, parser: argparse.ArgumentParser) -> int:
+    from trading_research_agent.schemas.strategy import StrategyFamily
+    from trading_research_agent.workflows.parameter_sweep import (
+        format_sweep,
+        run_single_asset_sweep,
+    )
+
+    if not args.sweep_asset or not args.start or not args.end:
+        parser.error("--sweep requires --sweep-asset, --start and --end")
+    if args.lockbox_pct <= 0:
+        parser.error("--sweep requires --lockbox-pct > 0 (e.g. --lockbox-pct 0.25)")
+
+    raw_values = [v.strip() for v in args.sweep_values.split(",") if v.strip()]
+    if len(raw_values) < 2:
+        parser.error("--sweep requires --sweep-values with at least 2 values")
+    try:
+        values = [float(v) for v in raw_values]
+    except ValueError:
+        parser.error("--sweep-values must be numbers, e.g. 20,30,40,55,70,90")
+
+    family = StrategyFamily(args.sweep_family)
+    try:
+        result = run_single_asset_sweep(
+            asset=args.sweep_asset,
+            family=family,
+            param=args.sweep,
+            values=values,
+            start=args.start,
+            end=args.end,
+            lockbox_pct=args.lockbox_pct,
+        )
+    except Exception as exc:
+        console.print(Panel(f"Sweep failed: {exc}", title="Parameter Sweep"))
+        return 1
+
+    console.print(Panel(format_sweep(result), title=f"Parameter Sweep — {result['param']}"))
+    return 0
+
+
 def _parse_symbol_csv(raw: str) -> list[str]:
     return [s for s in (sym.strip() for sym in raw.split(",")) if s]
 
@@ -305,6 +375,11 @@ def _default_portfolio_hypothesis(family: PortfolioFamily, assets: list[str]) ->
         return (
             "Relative strength persists, but assets with negative absolute momentum "
             "should leave their allocation in cash."
+        )
+    if family == PortfolioFamily.VOLATILITY_SCALED_MOMENTUM:
+        return (
+            "Positive cross-asset trends may persist, but capital should be sized by "
+            "recent volatility so high-volatility assets do not dominate the book."
         )
     return (
         f"The {family.value} rule may improve risk-adjusted returns across "

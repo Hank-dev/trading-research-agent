@@ -49,3 +49,15 @@ def test_time_series_momentum_does_not_require_hedge_weight() -> None:
         )
     )
     assert spec.portfolio_family == PortfolioFamily.TIME_SERIES_MOMENTUM
+
+
+def test_volatility_scaled_momentum_does_not_require_hedge_weight() -> None:
+    spec = PortfolioSpec(
+        **make(
+            portfolio_family=PortfolioFamily.VOLATILITY_SCALED_MOMENTUM,
+            assets=["SPY", "TLT", "GLD", "DBC"],
+            hedge_weight=None,
+            top_k=4,
+        )
+    )
+    assert spec.portfolio_family == PortfolioFamily.VOLATILITY_SCALED_MOMENTUM

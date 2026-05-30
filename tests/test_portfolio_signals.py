@@ -186,6 +186,58 @@ def test_time_series_momentum_goes_all_cash_when_all_falling() -> None:
     assert (rebalance_rows.sum(axis=1) == 0.0).all()
 
 
+def test_volatility_scaled_momentum_inverse_vol_weights_positive_assets() -> None:
+    rows = 300
+    index = pd.date_range("2020-01-01", periods=rows, freq="D")
+    low_vol_returns = 0.001 + np.where(np.arange(rows) % 2 == 0, 0.001, -0.0005)
+    high_vol_returns = 0.004 + np.where(np.arange(rows) % 2 == 0, 0.025, -0.015)
+    down_returns = np.full(rows, -0.001)
+
+    def prices(returns: np.ndarray) -> pd.Series:
+        return pd.Series(100.0 * np.cumprod(1.0 + returns), index=index)
+
+    panel = pd.DataFrame(
+        {
+            "LOW": prices(low_vol_returns),
+            "HIGH": prices(high_vol_returns),
+            "DOWN": prices(down_returns),
+        }
+    )
+    spec = make_spec(
+        assets=["LOW", "HIGH", "DOWN"],
+        portfolio_family=PortfolioFamily.VOLATILITY_SCALED_MOMENTUM,
+        lookback_days=60,
+    )
+
+    weights = compute_target_weights(panel, spec)
+    rebalance_rows = weights.dropna(how="all")
+
+    assert np.allclose(rebalance_rows.sum(axis=1), 1.0)
+    assert (rebalance_rows["LOW"] > rebalance_rows["HIGH"]).all()
+    assert np.allclose(rebalance_rows["DOWN"], 0.0)
+
+
+def test_volatility_scaled_momentum_goes_cash_when_no_positive_trends() -> None:
+    rows = 300
+    index = pd.date_range("2020-01-01", periods=rows, freq="D")
+    panel = pd.DataFrame(
+        {
+            "AAA": pd.Series(100.0 * np.cumprod(np.full(rows, 0.999)), index=index),
+            "BBB": pd.Series(100.0 * np.cumprod(np.full(rows, 0.998)), index=index),
+        }
+    )
+    spec = make_spec(
+        assets=["AAA", "BBB"],
+        portfolio_family=PortfolioFamily.VOLATILITY_SCALED_MOMENTUM,
+        lookback_days=60,
+    )
+
+    weights = compute_target_weights(panel, spec)
+    rebalance_rows = weights.dropna(how="all")
+
+    assert (rebalance_rows.sum(axis=1) == 0.0).all()
+
+
 def test_crisis_hedge_holds_core_in_calm_hedge_in_stress() -> None:
     rows = 300
     index = pd.date_range("2020-01-01", periods=rows, freq="D")

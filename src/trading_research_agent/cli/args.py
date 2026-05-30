@@ -235,6 +235,59 @@ def build_parser() -> argparse.ArgumentParser:
         help="Print a cross-run summary of past backtests and exit.",
     )
     parser.add_argument(
+        "--budget",
+        action="store_true",
+        help=(
+            "Print the cumulative trial budget: how many portfolio strategies you "
+            "have tested, and whether any lockbox-confirmed candidate still clears "
+            "the deflated-Sharpe bar once corrected for the full shot count."
+        ),
+    )
+    parser.add_argument(
+        "--macro-regime",
+        type=str,
+        default="",
+        choices=["walcl", "fedfunds", "m2"],
+        metavar="SIGNAL",
+        help=(
+            "Run the pre-registered macro-regime rotation on one monetary signal "
+            "(walcl=Fed balance sheet, fedfunds=rate, m2=money stock). Frozen mapping, "
+            "look-ahead-safe. Requires --start, --end, --lockbox-pct."
+        ),
+    )
+    parser.add_argument(
+        "--sweep",
+        type=str,
+        default="",
+        metavar="PARAM",
+        help=(
+            "Sweep one single-asset parameter as a robustness test (PLATEAU vs SPIKE), "
+            "not a peak-picker. e.g. --sweep entry_window. Requires --sweep-values, "
+            "--sweep-asset, --sweep-family, --start, --end, --lockbox-pct."
+        ),
+    )
+    parser.add_argument(
+        "--sweep-values",
+        type=str,
+        default="",
+        metavar="V1,V2,...",
+        help="Comma-separated parameter values to sweep, e.g. 20,30,40,55,70,90.",
+    )
+    parser.add_argument(
+        "--sweep-asset",
+        type=str,
+        default="",
+        metavar="SYM",
+        help="Single asset for the sweep, e.g. BTC-USD.",
+    )
+    parser.add_argument(
+        "--sweep-family",
+        type=str,
+        default="donchian_breakout",
+        choices=["sma_crossover", "donchian_breakout", "rsi_mean_reversion"],
+        help="Single-asset strategy family for the sweep. Default: donchian_breakout.",
+    )
+    parser.add_argument(
         "--history-detail",
         type=str,
         default="",

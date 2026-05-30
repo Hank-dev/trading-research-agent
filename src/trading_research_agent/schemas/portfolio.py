@@ -23,6 +23,11 @@ class PortfolioFamily(str, Enum):
     # broad downturn most assets switch off, so the book defensively de-risks
     # while any crisis-beneficiary (bonds, gold) keeps its slice.
     TIME_SERIES_MOMENTUM = "time_series_momentum"
+    # Time-series momentum with inverse-volatility sizing: assets with positive
+    # trailing return are held, but low-volatility assets get larger weights than
+    # high-volatility assets. If no asset has positive momentum, the book sits in
+    # cash. This avoids raw momentum being dominated by BTC/oil-level volatility.
+    VOLATILITY_SCALED_MOMENTUM = "volatility_scaled_momentum"
     # Crisis-hedge overlay: hold a core risk asset while it is above its own SMA;
     # when it breaks below, exit to cash and hold a capped slice of a volatility
     # hedge (e.g. a VIX ETF) that profits if the downturn accelerates.
