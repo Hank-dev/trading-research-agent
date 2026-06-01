@@ -10,6 +10,7 @@ from trading_research_agent.schemas.backtest import (
 )
 from trading_research_agent.schemas.strategy import StrategyFamily, StrategySpec
 from trading_research_agent.tools.indicators import (
+    atr,
     donchian_high,
     donchian_low,
     rsi,
@@ -77,6 +78,21 @@ class VectorbtBackend:
             channel_low = donchian_low(data["Low"].astype(float), spec.exit_window)
             entries = close > channel_high
             exits = close < channel_low
+            return entries.fillna(False), exits.fillna(False)
+
+        if spec.strategy_family == StrategyFamily.FILTERED_DONCHIAN_BREAKOUT:
+            high = data["High"].astype(float)
+            low = data["Low"].astype(float)
+            channel_high = donchian_high(high, spec.entry_window)
+            channel_low = donchian_low(low, spec.exit_window)
+            # Volatility-expansion filter: ATR above its own moving average.
+            atr_values = atr(high, low, close, spec.atr_window)
+            vol_expanding = atr_values > sma(atr_values, spec.atr_ma_window)
+            # Regime filter: only take longs while price is above its long MA.
+            uptrend = close > sma(close, spec.regime_window)
+            entries = (close > channel_high) & vol_expanding & uptrend
+            # Exit on a channel breakdown OR when the uptrend regime ends.
+            exits = (close < channel_low) | (~uptrend)
             return entries.fillna(False), exits.fillna(False)
 
         if spec.strategy_family == StrategyFamily.RSI_MEAN_REVERSION:

@@ -284,7 +284,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--sweep-family",
         type=str,
         default="donchian_breakout",
-        choices=["sma_crossover", "donchian_breakout", "rsi_mean_reversion"],
+        choices=[
+            "sma_crossover",
+            "donchian_breakout",
+            "rsi_mean_reversion",
+            "filtered_donchian_breakout",
+        ],
         help="Single-asset strategy family for the sweep. Default: donchian_breakout.",
     )
     parser.add_argument(

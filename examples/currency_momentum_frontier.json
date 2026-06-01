@@ -1,0 +1,16 @@
+{
+  "_comment": "Currency cross-sectional momentum on 6 USD-quoted currency ETFs (ETF proxies, not spot FX; carry NOT tested). Frozen 4-spec grid: cross_sectional + dual momentum, 6mo + 12mo lookback, top_2, monthly. NOTE: equal-weight benchmark is negative over 2008-2024 (USD strengthened), so 'beats benchmark' is a low bar here.",
+  "defaults": {
+    "assets": "FXE,FXY,FXB,FXF,FXA,FXC",
+    "start": "2008-01-01",
+    "end": "2025-01-01",
+    "top_k": 2,
+    "rebalance": 21
+  },
+  "portfolios": [
+    {"name": "FX XSec mom L126 k2", "family": "cross_sectional_momentum", "lookback": 126},
+    {"name": "FX XSec mom L252 k2", "family": "cross_sectional_momentum", "lookback": 252},
+    {"name": "FX Dual mom L126 k2", "family": "dual_momentum", "lookback": 126},
+    {"name": "FX Dual mom L252 k2", "family": "dual_momentum", "lookback": 252}
+  ]
+}

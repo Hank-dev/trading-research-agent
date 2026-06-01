@@ -1,0 +1,22 @@
+{
+  "defaults": {
+    "assets": "XLK,XLF,XLE,XLV,XLI,XLP,XLU,XLY,XLB",
+    "start": "1999-01-01",
+    "end": "2025-01-01",
+    "rebalance": 21
+  },
+  "portfolios": [
+    {"name": "XSec mom L126 k2", "family": "cross_sectional_momentum", "lookback": 126, "top_k": 2},
+    {"name": "XSec mom L126 k3", "family": "cross_sectional_momentum", "lookback": 126, "top_k": 3},
+    {"name": "XSec mom L252 k2", "family": "cross_sectional_momentum", "lookback": 252, "top_k": 2},
+    {"name": "XSec mom L252 k3", "family": "cross_sectional_momentum", "lookback": 252, "top_k": 3},
+    {"name": "Dual mom L126 k2", "family": "dual_momentum", "lookback": 126, "top_k": 2},
+    {"name": "Dual mom L126 k3", "family": "dual_momentum", "lookback": 126, "top_k": 3},
+    {"name": "Dual mom L252 k2", "family": "dual_momentum", "lookback": 252, "top_k": 2},
+    {"name": "Dual mom L252 k3", "family": "dual_momentum", "lookback": 252, "top_k": 3},
+    {"name": "VolScaled mom L126 k2", "family": "volatility_scaled_momentum", "lookback": 126, "top_k": 2},
+    {"name": "VolScaled mom L126 k3", "family": "volatility_scaled_momentum", "lookback": 126, "top_k": 3},
+    {"name": "VolScaled mom L252 k2", "family": "volatility_scaled_momentum", "lookback": 252, "top_k": 2},
+    {"name": "VolScaled mom L252 k3", "family": "volatility_scaled_momentum", "lookback": 252, "top_k": 3}
+  ]
+}

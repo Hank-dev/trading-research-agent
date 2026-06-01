@@ -36,15 +36,38 @@ _FAMILY_DEFAULTS: dict[StrategyFamily, dict[str, Any]] = {
         "oversold_threshold": 30.0,
         "exit_threshold": 50.0,
     },
+    StrategyFamily.FILTERED_DONCHIAN_BREAKOUT: {
+        "entry_window": 55,
+        "exit_window": 20,
+        "atr_window": 14,
+        "atr_ma_window": 20,
+        "regime_window": 200,
+    },
 }
 
 _SWEEPABLE: dict[StrategyFamily, set[str]] = {
     StrategyFamily.SMA_CROSSOVER: {"fast_window", "slow_window"},
     StrategyFamily.DONCHIAN_BREAKOUT: {"entry_window", "exit_window"},
     StrategyFamily.RSI_MEAN_REVERSION: {"rsi_window", "oversold_threshold", "exit_threshold"},
+    StrategyFamily.FILTERED_DONCHIAN_BREAKOUT: {
+        "entry_window",
+        "exit_window",
+        "atr_window",
+        "atr_ma_window",
+        "regime_window",
+    },
 }
 
-_INT_PARAMS = {"fast_window", "slow_window", "entry_window", "exit_window", "rsi_window"}
+_INT_PARAMS = {
+    "fast_window",
+    "slow_window",
+    "entry_window",
+    "exit_window",
+    "rsi_window",
+    "atr_window",
+    "atr_ma_window",
+    "regime_window",
+}
 
 
 class SweepEntry(TypedDict, total=False):

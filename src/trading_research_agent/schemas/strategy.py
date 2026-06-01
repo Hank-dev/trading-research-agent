@@ -13,6 +13,10 @@ class StrategyFamily(str, Enum):
     SMA_CROSSOVER = "sma_crossover"
     DONCHIAN_BREAKOUT = "donchian_breakout"
     RSI_MEAN_REVERSION = "rsi_mean_reversion"
+    # Donchian breakout gated on a volatility-expansion filter (ATR above its own
+    # average) and an uptrend regime filter (close above its long MA), to avoid
+    # the fakeouts plain breakouts suffer in chop / low-volatility ranges.
+    FILTERED_DONCHIAN_BREAKOUT = "filtered_donchian_breakout"
 
 
 class MarketDataSource(str, Enum):
@@ -57,6 +61,11 @@ class StrategySpec(BaseModel):
     oversold_threshold: float | None = None
     exit_threshold: float | None = None
 
+    # Filtered Donchian breakout filters
+    atr_window: int | None = None
+    atr_ma_window: int | None = None
+    regime_window: int | None = None
+
     hypothesis: str = Field(
         description="Plain-English hypothesis explaining why this strategy might work"
     )
@@ -79,7 +88,10 @@ class StrategySpec(BaseModel):
             if self.slow_window > 300:
                 raise ValueError("slow_window must be <= 300")
 
-        if self.strategy_family == StrategyFamily.DONCHIAN_BREAKOUT:
+        if self.strategy_family in (
+            StrategyFamily.DONCHIAN_BREAKOUT,
+            StrategyFamily.FILTERED_DONCHIAN_BREAKOUT,
+        ):
             if self.entry_window is None or self.exit_window is None:
                 raise ValueError("Donchian breakout requires entry_window and exit_window")
             if self.entry_window < 5:
@@ -88,6 +100,23 @@ class StrategySpec(BaseModel):
                 raise ValueError("exit_window must be >= 2")
             if self.entry_window > 300 or self.exit_window > 300:
                 raise ValueError("Donchian windows must be <= 300")
+
+        if self.strategy_family == StrategyFamily.FILTERED_DONCHIAN_BREAKOUT:
+            if (
+                self.atr_window is None
+                or self.atr_ma_window is None
+                or self.regime_window is None
+            ):
+                raise ValueError(
+                    "Filtered Donchian breakout requires atr_window, "
+                    "atr_ma_window, and regime_window"
+                )
+            if self.atr_window < 2 or self.atr_window > 100:
+                raise ValueError("atr_window must be between 2 and 100")
+            if self.atr_ma_window < 2 or self.atr_ma_window > 200:
+                raise ValueError("atr_ma_window must be between 2 and 200")
+            if self.regime_window < 20 or self.regime_window > 300:
+                raise ValueError("regime_window must be between 20 and 300")
 
         if self.strategy_family == StrategyFamily.RSI_MEAN_REVERSION:
             if (

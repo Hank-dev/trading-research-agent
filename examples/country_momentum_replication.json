@@ -1,0 +1,16 @@
+{
+  "_comment": "Independent replication of the 12-month sector-momentum lead. EXACT winning configs (252d lookback, monthly rebalance, top_k 2/3, cross_sectional + dual) applied to a NEW universe (9 single-country iShares ETFs) the strategy was never fit to. No parameter search.",
+  "defaults": {
+    "assets": "EWJ,EWG,EWU,EWA,EWC,EWH,EWW,EWS,EWL",
+    "start": "1999-01-01",
+    "end": "2025-01-01",
+    "lookback": 252,
+    "rebalance": 21
+  },
+  "portfolios": [
+    {"name": "Country XSec mom L252 k2", "family": "cross_sectional_momentum", "top_k": 2},
+    {"name": "Country XSec mom L252 k3", "family": "cross_sectional_momentum", "top_k": 3},
+    {"name": "Country Dual mom L252 k2", "family": "dual_momentum", "top_k": 2},
+    {"name": "Country Dual mom L252 k3", "family": "dual_momentum", "top_k": 3}
+  ]
+}

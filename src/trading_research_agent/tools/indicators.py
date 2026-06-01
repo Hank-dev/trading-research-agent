@@ -32,3 +32,19 @@ def donchian_high(high: pd.Series, window: int) -> pd.Series:
 
 def donchian_low(low: pd.Series, window: int) -> pd.Series:
     return _to_series(low).rolling(window).min().shift(1)
+
+
+def atr(high: pd.Series, low: pd.Series, close: pd.Series, window: int = 14) -> pd.Series:
+    """Average True Range: rolling mean of the true range over `window` bars.
+
+    True range = max(high-low, |high-prev_close|, |low-prev_close|).
+    """
+    high = _to_series(high)
+    low = _to_series(low)
+    close = _to_series(close)
+    prev_close = close.shift(1)
+    true_range = pd.concat(
+        [(high - low), (high - prev_close).abs(), (low - prev_close).abs()],
+        axis=1,
+    ).max(axis=1)
+    return true_range.rolling(window).mean()
