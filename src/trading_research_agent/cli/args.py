@@ -289,6 +289,7 @@ def build_parser() -> argparse.ArgumentParser:
             "donchian_breakout",
             "rsi_mean_reversion",
             "filtered_donchian_breakout",
+            "filtered_rsi_mean_reversion",
         ],
         help="Single-asset strategy family for the sweep. Default: donchian_breakout.",
     )

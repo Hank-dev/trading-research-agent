@@ -43,6 +43,13 @@ _FAMILY_DEFAULTS: dict[StrategyFamily, dict[str, Any]] = {
         "atr_ma_window": 20,
         "regime_window": 200,
     },
+    StrategyFamily.FILTERED_RSI_MEAN_REVERSION: {
+        "rsi_window": 14,
+        "oversold_threshold": 30.0,
+        "exit_threshold": 50.0,
+        "atr_window": 14,
+        "atr_ma_window": 20,
+    },
 }
 
 _SWEEPABLE: dict[StrategyFamily, set[str]] = {
@@ -55,6 +62,13 @@ _SWEEPABLE: dict[StrategyFamily, set[str]] = {
         "atr_window",
         "atr_ma_window",
         "regime_window",
+    },
+    StrategyFamily.FILTERED_RSI_MEAN_REVERSION: {
+        "rsi_window",
+        "oversold_threshold",
+        "exit_threshold",
+        "atr_window",
+        "atr_ma_window",
     },
 }
 

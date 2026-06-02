@@ -17,6 +17,9 @@ class StrategyFamily(str, Enum):
     # average) and an uptrend regime filter (close above its long MA), to avoid
     # the fakeouts plain breakouts suffer in chop / low-volatility ranges.
     FILTERED_DONCHIAN_BREAKOUT = "filtered_donchian_breakout"
+    # RSI mean reversion gated on a calm-volatility filter: only buy oversold dips
+    # while ATR is below its own moving average (volatility not spiking).
+    FILTERED_RSI_MEAN_REVERSION = "filtered_rsi_mean_reversion"
 
 
 class MarketDataSource(str, Enum):
@@ -118,7 +121,10 @@ class StrategySpec(BaseModel):
             if self.regime_window < 20 or self.regime_window > 300:
                 raise ValueError("regime_window must be between 20 and 300")
 
-        if self.strategy_family == StrategyFamily.RSI_MEAN_REVERSION:
+        if self.strategy_family in (
+            StrategyFamily.RSI_MEAN_REVERSION,
+            StrategyFamily.FILTERED_RSI_MEAN_REVERSION,
+        ):
             if (
                 self.rsi_window is None
                 or self.oversold_threshold is None
@@ -136,5 +142,15 @@ class StrategySpec(BaseModel):
                 raise ValueError("oversold_threshold must be >= 5")
             if self.exit_threshold > 95:
                 raise ValueError("exit_threshold must be <= 95")
+
+        if self.strategy_family == StrategyFamily.FILTERED_RSI_MEAN_REVERSION:
+            if self.atr_window is None or self.atr_ma_window is None:
+                raise ValueError(
+                    "Filtered RSI mean reversion requires atr_window and atr_ma_window"
+                )
+            if self.atr_window < 2 or self.atr_window > 100:
+                raise ValueError("atr_window must be between 2 and 100")
+            if self.atr_ma_window < 2 or self.atr_ma_window > 200:
+                raise ValueError("atr_ma_window must be between 2 and 200")
 
         return self

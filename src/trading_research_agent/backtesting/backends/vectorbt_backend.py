@@ -101,6 +101,17 @@ class VectorbtBackend:
             exits = rsi_values > spec.exit_threshold
             return entries.fillna(False), exits.fillna(False)
 
+        if spec.strategy_family == StrategyFamily.FILTERED_RSI_MEAN_REVERSION:
+            rsi_values = rsi(close, spec.rsi_window)
+            # Calm-volatility filter: only buy oversold dips while ATR is BELOW its
+            # own moving average (volatility not spiking). The filter gates ENTRY
+            # only; exits stay on the RSI recovery.
+            atr_values = atr(data["High"].astype(float), data["Low"].astype(float), close, spec.atr_window)
+            calm_vol = atr_values < sma(atr_values, spec.atr_ma_window)
+            entries = (rsi_values < spec.oversold_threshold) & calm_vol
+            exits = rsi_values > spec.exit_threshold
+            return entries.fillna(False), exits.fillna(False)
+
         raise ValueError(f"Unsupported strategy family: {spec.strategy_family}")
 
     def _metrics_from_portfolio(
