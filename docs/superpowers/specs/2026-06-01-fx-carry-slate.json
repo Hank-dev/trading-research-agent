@@ -1,0 +1,68 @@
+[
+  {
+    "name": "fxcarry_top2_3mo_monthly",
+    "family": "fx_carry",
+    "assets": ["FXE", "FXY", "FXB", "FXF", "FXA", "FXC"],
+    "start": "2010-01-01",
+    "end": "2025-01-01",
+    "lookback_days": 63,
+    "top_k": 2,
+    "rebalance_days": 21,
+    "hypothesis": "Hold the 2 G10 currencies with the highest short-rate differential vs USD (3mo-smoothed), rebalanced monthly. Classic FX carry: high-rate currencies earn the rate differential."
+  },
+  {
+    "name": "fxcarry_top3_3mo_monthly",
+    "family": "fx_carry",
+    "assets": ["FXE", "FXY", "FXB", "FXF", "FXA", "FXC"],
+    "start": "2010-01-01",
+    "end": "2025-01-01",
+    "lookback_days": 63,
+    "top_k": 3,
+    "rebalance_days": 21,
+    "hypothesis": "Broader carry basket (top 3 of 6) to dilute single-currency risk while still tilting to high-carry."
+  },
+  {
+    "name": "fxcarry_top2_1mo_monthly",
+    "family": "fx_carry",
+    "assets": ["FXE", "FXY", "FXB", "FXF", "FXA", "FXC"],
+    "start": "2010-01-01",
+    "end": "2025-01-01",
+    "lookback_days": 21,
+    "top_k": 2,
+    "rebalance_days": 21,
+    "hypothesis": "Less smoothing (1mo) to test whether reacting faster to rate moves helps or just adds turnover/noise."
+  },
+  {
+    "name": "fxcarry_top2_6mo_quarterly",
+    "family": "fx_carry",
+    "assets": ["FXE", "FXY", "FXB", "FXF", "FXA", "FXC"],
+    "start": "2010-01-01",
+    "end": "2025-01-01",
+    "lookback_days": 126,
+    "top_k": 2,
+    "rebalance_days": 63,
+    "hypothesis": "Slow carry: 6mo-smoothed signal, quarterly rebalance, to minimise turnover and trade only on persistent rate differentials."
+  },
+  {
+    "name": "fxcarry_top1_3mo_monthly",
+    "family": "fx_carry",
+    "assets": ["FXE", "FXY", "FXB", "FXF", "FXA", "FXC"],
+    "start": "2010-01-01",
+    "end": "2025-01-01",
+    "lookback_days": 63,
+    "top_k": 1,
+    "rebalance_days": 21,
+    "hypothesis": "Concentrated: hold only the single highest-carry currency. Maximal carry exposure, maximal single-currency risk."
+  },
+  {
+    "name": "fxcarry_top3_6mo_monthly",
+    "family": "fx_carry",
+    "assets": ["FXE", "FXY", "FXB", "FXF", "FXA", "FXC"],
+    "start": "2010-01-01",
+    "end": "2025-01-01",
+    "lookback_days": 126,
+    "top_k": 3,
+    "rebalance_days": 21,
+    "hypothesis": "Broad + smooth: top 3, 6mo-smoothed, monthly rebalance."
+  }
+]
