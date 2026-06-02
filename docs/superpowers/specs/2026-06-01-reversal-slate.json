@@ -1,0 +1,74 @@
+[
+  {
+    "name": "reversal_multiasset_4y_skip1y_k3",
+    "family": "cross_sectional_reversal",
+    "assets": ["SPY", "QQQ", "EFA", "EEM", "TLT", "IEF", "GLD", "DBC"],
+    "start": "2007-01-01",
+    "end": "2025-01-01",
+    "lookback_days": 1008,
+    "skip_recent_days": 252,
+    "top_k": 3,
+    "rebalance_days": 21,
+    "hypothesis": "Across a broad multi-asset universe, the assets most beaten-down over years 2-4 (excluding the last 12 months) mean-revert and outperform over the next month."
+  },
+  {
+    "name": "reversal_multiasset_5y_skip1y_k3",
+    "family": "cross_sectional_reversal",
+    "assets": ["SPY", "QQQ", "EFA", "EEM", "TLT", "IEF", "GLD", "DBC"],
+    "start": "2007-01-01",
+    "end": "2025-01-01",
+    "lookback_days": 1260,
+    "skip_recent_days": 252,
+    "top_k": 3,
+    "rebalance_days": 21,
+    "hypothesis": "Same multi-asset reversal at the full 5y De Bondt-Thaler horizon (years 2-5, skip last 12mo)."
+  },
+  {
+    "name": "reversal_multiasset_3y_skip1y_k3",
+    "family": "cross_sectional_reversal",
+    "assets": ["SPY", "QQQ", "EFA", "EEM", "TLT", "IEF", "GLD", "DBC"],
+    "start": "2007-01-01",
+    "end": "2025-01-01",
+    "lookback_days": 756,
+    "skip_recent_days": 252,
+    "top_k": 3,
+    "rebalance_days": 21,
+    "hypothesis": "Shorter 3y reversal horizon (years 2-3, skip last 12mo) to gauge horizon sensitivity."
+  },
+  {
+    "name": "reversal_multiasset_4y_skip1y_k2_quarterly",
+    "family": "cross_sectional_reversal",
+    "assets": ["SPY", "QQQ", "EFA", "EEM", "TLT", "IEF", "GLD", "DBC"],
+    "start": "2007-01-01",
+    "end": "2025-01-01",
+    "lookback_days": 1008,
+    "skip_recent_days": 252,
+    "top_k": 2,
+    "rebalance_days": 63,
+    "hypothesis": "Concentrated (top 2) quarterly-rebalanced 4y reversal to cut turnover and test whether the effect survives lower trading frequency."
+  },
+  {
+    "name": "reversal_equityregions_4y_skip1y_k2",
+    "family": "cross_sectional_reversal",
+    "assets": ["SPY", "QQQ", "EFA", "EEM"],
+    "start": "2007-01-01",
+    "end": "2025-01-01",
+    "lookback_days": 1008,
+    "skip_recent_days": 252,
+    "top_k": 2,
+    "rebalance_days": 21,
+    "hypothesis": "Equity-region-only reversal: rotate toward the cheapest regions (US large, US tech, developed-ex-US, EM) on a 4y skip-1y horizon."
+  },
+  {
+    "name": "reversal_multiasset_4y_NOSKIP_k3_control",
+    "family": "cross_sectional_reversal",
+    "assets": ["SPY", "QQQ", "EFA", "EEM", "TLT", "IEF", "GLD", "DBC"],
+    "start": "2007-01-01",
+    "end": "2025-01-01",
+    "lookback_days": 1008,
+    "skip_recent_days": 0,
+    "top_k": 3,
+    "rebalance_days": 21,
+    "hypothesis": "CONTROL: identical to spec 1 but with no skip-recent gap, i.e. plain inverted momentum. Pre-registered to measure how much the skip-recent gap actually changes behaviour and orthogonality."
+  }
+]
