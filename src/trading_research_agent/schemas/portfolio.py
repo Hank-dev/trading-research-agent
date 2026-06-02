@@ -32,6 +32,11 @@ class PortfolioFamily(str, Enum):
     # when it breaks below, exit to cash and hold a capped slice of a volatility
     # hedge (e.g. a VIX ETF) that profits if the downturn accelerates.
     CRISIS_HEDGE = "crisis_hedge"
+    # Long-horizon cross-sectional reversal (De Bondt-Thaler): hold the bottom_k
+    # assets by trailing return measured over a long window that EXCLUDES the most
+    # recent `skip_recent_days`. The skip-recent gap is what makes this orthogonal
+    # to 6-12mo momentum rather than merely inverted momentum.
+    CROSS_SECTIONAL_REVERSAL = "cross_sectional_reversal"
 
 
 class PortfolioSpec(BaseModel):
@@ -65,6 +70,14 @@ class PortfolioSpec(BaseModel):
     rebalance_days: int = Field(
         default=21,
         description="Rebalance frequency in trading days (21 ~ monthly).",
+    )
+    skip_recent_days: int = Field(
+        default=252,
+        description=(
+            "cross_sectional_reversal only: trading days at the recent end of the "
+            "lookback window to EXCLUDE when scoring (the skip-recent gap). Must be "
+            "in [0, lookback_days)."
+        ),
     )
     hedge_weight: float | None = Field(
         default=None,
@@ -100,8 +113,8 @@ class PortfolioSpec(BaseModel):
 
         if self.lookback_days < 20:
             raise ValueError("lookback_days must be >= 20")
-        if self.lookback_days > 504:
-            raise ValueError("lookback_days must be <= 504 (~2 years)")
+        if self.lookback_days > 1260:
+            raise ValueError("lookback_days must be <= 1260 (~5 years)")
         if self.rebalance_days < 1:
             raise ValueError("rebalance_days must be >= 1")
         if self.rebalance_days > 252:
@@ -110,11 +123,18 @@ class PortfolioSpec(BaseModel):
         if self.portfolio_family in (
             PortfolioFamily.CROSS_SECTIONAL_MOMENTUM,
             PortfolioFamily.DUAL_MOMENTUM,
+            PortfolioFamily.CROSS_SECTIONAL_REVERSAL,
         ):
             if self.top_k < 1:
                 raise ValueError("top_k must be >= 1")
             if self.top_k > len(self.assets):
                 raise ValueError("top_k cannot exceed the number of assets")
+
+        if self.portfolio_family == PortfolioFamily.CROSS_SECTIONAL_REVERSAL:
+            if self.skip_recent_days < 0:
+                raise ValueError("skip_recent_days must be >= 0")
+            if self.skip_recent_days >= self.lookback_days:
+                raise ValueError("skip_recent_days must be < lookback_days")
 
         if self.portfolio_family == PortfolioFamily.CRISIS_HEDGE:
             if len(self.assets) != 2:

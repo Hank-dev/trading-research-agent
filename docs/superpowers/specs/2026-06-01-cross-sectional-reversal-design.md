@@ -58,8 +58,10 @@ so `i - lookback_days >= 0` always holds. No change to either.
      `PortfolioFamily`.
    - Add `skip_recent_days: int = Field(default=252, ...)`.
    - Raise the `lookback_days` ceiling from 504 to 1260 (~5y).
-   - Validation: `skip_recent_days >= 21` and `skip_recent_days < lookback_days`;
-     add `CROSS_SECTIONAL_REVERSAL` to the existing `top_k` validation tuple.
+   - Validation: `skip_recent_days >= 0` and `skip_recent_days < lookback_days`
+     (the `>= 0` floor, rather than a larger minimum, lets a no-skip baseline be
+     tested for comparison); add `CROSS_SECTIONAL_REVERSAL` to the existing
+     `top_k` validation tuple.
 
 2. **tools/portfolio_signals.py**
    - Add `_reversal_row(close, i, spec)` and one dispatch line in `_target_row`.

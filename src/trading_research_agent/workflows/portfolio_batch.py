@@ -129,6 +129,7 @@ def _spec_from_dict(raw: dict[str, Any], *, index: int) -> PortfolioSpec:
         lookback_days=int(_get(raw, "lookback_days", "lookback", default=126)),
         top_k=int(_get(raw, "top_k", "top-k", default=1)),
         rebalance_days=int(_get(raw, "rebalance_days", "rebalance", default=21)),
+        skip_recent_days=int(_get(raw, "skip_recent_days", "skip_recent", default=252)),
         hedge_weight=_optional_float(raw.get("hedge_weight")),
         hypothesis=str(hypothesis),
     )

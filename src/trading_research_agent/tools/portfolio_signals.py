@@ -53,6 +53,8 @@ def _target_row(close: pd.DataFrame, i: int, spec: PortfolioSpec) -> pd.Series:
         return _volatility_scaled_momentum_row(close, i, spec)
     if spec.portfolio_family == PortfolioFamily.CRISIS_HEDGE:
         return _crisis_hedge_row(close, i, spec)
+    if spec.portfolio_family == PortfolioFamily.CROSS_SECTIONAL_REVERSAL:
+        return _reversal_row(close, i, spec)
     return _momentum_row(close, i, spec)
 
 
@@ -71,6 +73,27 @@ def _momentum_row(close: pd.DataFrame, i: int, spec: PortfolioSpec) -> pd.Series
     if selected:
         # Divide by top_k (not len(selected)) so that when the dual-momentum
         # filter leaves fewer than top_k qualifiers, the remainder stays in cash.
+        target[selected] = 1.0 / spec.top_k
+    return target
+
+
+def _reversal_row(close: pd.DataFrame, i: int, spec: PortfolioSpec) -> pd.Series:
+    # Long-horizon cross-sectional reversal. Score each asset by its return over
+    # the window [i - lookback_days, i - skip_recent_days] — i.e. excluding the
+    # most recent `skip_recent_days` bars — then hold the bottom top_k (most
+    # beaten-down) equal-weight. The skip-recent gap is what separates this from
+    # inverted momentum: without it, the score is dominated by the same recent
+    # window momentum trades on.
+    past_close = close.iloc[i - spec.lookback_days]
+    recent_close = close.iloc[i - spec.skip_recent_days]
+    reversal_score = (recent_close / past_close) - 1.0
+
+    ranked = reversal_score.dropna().sort_values(ascending=True)
+    selected = list(ranked.head(spec.top_k).index)
+    target = pd.Series(0.0, index=close.columns)
+    if selected:
+        # Divide by top_k (not len(selected)) so any shortfall stays in cash,
+        # matching the _momentum_row convention.
         target[selected] = 1.0 / spec.top_k
     return target
 
