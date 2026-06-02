@@ -18,8 +18,11 @@ from trading_research_agent.nodes.generate_portfolio_slate import generate_portf
 from trading_research_agent.reports.markdown_report import build_research_report
 from trading_research_agent.schemas.backtest import RobustnessResult
 from trading_research_agent.schemas.critique import StrategyCritique
-from trading_research_agent.schemas.portfolio import PortfolioSpec
-from trading_research_agent.tools.data_loader import load_portfolio_panel
+from trading_research_agent.schemas.portfolio import PortfolioFamily, PortfolioSpec
+from trading_research_agent.tools.data_loader import (
+    load_fx_carry_rates,
+    load_portfolio_panel,
+)
 from trading_research_agent.tools.stats import (
     estimate_trading_days,
     probabilistic_sharpe_ratio,
@@ -65,7 +68,8 @@ def run_portfolio_backtest(
             if panel is not None
             else load_portfolio_panel(spec.assets, spec.start_date, spec.end_date)
         )
-        result = PortfolioVectorbtBackend().run(spec, data_panel)
+        aux = _load_aux_panel(spec, data_panel)
+        result = PortfolioVectorbtBackend().run(spec, data_panel, aux)
     except Exception as exc:
         errors = [f"Portfolio backtest failed: {exc}"]
         report = build_research_report(
@@ -208,6 +212,17 @@ def run_portfolio_spec(
         result["lockbox_split"] = lockbox_split
 
     return result
+
+
+def _load_aux_panel(spec: PortfolioSpec, data_panel: pd.DataFrame) -> pd.DataFrame | None:
+    """Load the non-price signal panel a family needs. fx_carry needs a daily
+    rate-differential panel aligned to the price index; every other family is
+    price-only and gets None."""
+    if spec.portfolio_family == PortfolioFamily.FX_CARRY:
+        return load_fx_carry_rates(
+            spec.assets, spec.start_date, spec.end_date, data_panel.index
+        )
+    return None
 
 
 def _slice_panel(panel: pd.DataFrame, spec: PortfolioSpec, min_rows: int = 300) -> pd.DataFrame:

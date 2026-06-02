@@ -24,16 +24,28 @@ from trading_research_agent.tools.indicators import sma
 _VOLATILITY_SCALING_WINDOW = 60
 
 
-def compute_target_weights(close: pd.DataFrame, spec: PortfolioSpec) -> pd.DataFrame:
-    """Build the (dates x assets) target-weight matrix for a PortfolioSpec."""
+def compute_target_weights(
+    close: pd.DataFrame,
+    spec: PortfolioSpec,
+    aux: pd.DataFrame | None = None,
+) -> pd.DataFrame:
+    """Build the (dates x assets) target-weight matrix for a PortfolioSpec.
+
+    `aux` is an optional non-price signal panel (used by fx_carry: a
+    rate-differential matrix). When provided it is reindexed onto `close.index`
+    so callers (incl. walk-forward windows) can pass the full panel and stay
+    positionally aligned with `close`.
+    """
     if close.shape[1] < 2:
         raise ValueError("Portfolio weights require at least 2 asset columns")
+    if aux is not None:
+        aux = aux.reindex(close.index)
 
     weights = pd.DataFrame(np.nan, index=close.index, columns=close.columns)
     rebalance_rows = _rebalance_row_indices(len(close), spec)
 
     for i in rebalance_rows:
-        weights.iloc[i] = _target_row(close, i, spec).to_numpy()
+        weights.iloc[i] = _target_row(close, i, spec, aux).to_numpy()
 
     # Decide on bar i, execute on bar i+1. NaN rows remain NaN (no order).
     return weights.shift(1)
@@ -44,7 +56,9 @@ def _rebalance_row_indices(n_rows: int, spec: PortfolioSpec) -> range:
     return range(spec.lookback_days, n_rows, spec.rebalance_days)
 
 
-def _target_row(close: pd.DataFrame, i: int, spec: PortfolioSpec) -> pd.Series:
+def _target_row(
+    close: pd.DataFrame, i: int, spec: PortfolioSpec, aux: pd.DataFrame | None = None
+) -> pd.Series:
     if spec.portfolio_family == PortfolioFamily.EQUAL_WEIGHT_TREND:
         return _equal_weight_trend_row(close, i, spec)
     if spec.portfolio_family == PortfolioFamily.TIME_SERIES_MOMENTUM:
@@ -55,6 +69,8 @@ def _target_row(close: pd.DataFrame, i: int, spec: PortfolioSpec) -> pd.Series:
         return _crisis_hedge_row(close, i, spec)
     if spec.portfolio_family == PortfolioFamily.CROSS_SECTIONAL_REVERSAL:
         return _reversal_row(close, i, spec)
+    if spec.portfolio_family == PortfolioFamily.FX_CARRY:
+        return _fx_carry_row(close, i, spec, aux)
     return _momentum_row(close, i, spec)
 
 
@@ -89,6 +105,29 @@ def _reversal_row(close: pd.DataFrame, i: int, spec: PortfolioSpec) -> pd.Series
     reversal_score = (recent_close / past_close) - 1.0
 
     ranked = reversal_score.dropna().sort_values(ascending=True)
+    selected = list(ranked.head(spec.top_k).index)
+    target = pd.Series(0.0, index=close.columns)
+    if selected:
+        # Divide by top_k (not len(selected)) so any shortfall stays in cash,
+        # matching the _momentum_row convention.
+        target[selected] = 1.0 / spec.top_k
+    return target
+
+
+def _fx_carry_row(
+    close: pd.DataFrame, i: int, spec: PortfolioSpec, aux: pd.DataFrame | None
+) -> pd.Series:
+    # FX carry. Score each asset by its average rate differential vs USD over the
+    # last `lookback_days` (smoothing the monthly rate print to cut noise), then
+    # hold the top_k highest-carry assets equal-weight. The carry differentials
+    # arrive in `aux`, already publication-lagged upstream, so there is no
+    # look-ahead here beyond the shared .shift(1).
+    if aux is None:
+        raise ValueError("fx_carry requires a carry (rate-differential) panel via aux=")
+    window = aux.iloc[max(0, i - spec.lookback_days + 1) : i + 1]
+    carry = window.mean()
+
+    ranked = carry.dropna().sort_values(ascending=False)
     selected = list(ranked.head(spec.top_k).index)
     target = pd.Series(0.0, index=close.columns)
     if selected:

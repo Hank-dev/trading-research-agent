@@ -49,7 +49,7 @@ class FakeBackend:
     def __call__(self):
         return self
 
-    def run(self, spec, panel):
+    def run(self, spec, panel, aux=None):
         base = spec.name.replace(" (lockbox)", "")
         return fake_result(spec, sharpe=self.sharpe_by_name.get(base, 1.0))
 
@@ -123,9 +123,9 @@ def test_run_portfolio_exploration_with_lockbox_truncates_and_reruns(monkeypatch
     seen_ranges: list[tuple[str, str]] = []
 
     class TrackingBackend(FakeBackend):
-        def run(self, spec, panel):
+        def run(self, spec, panel, aux=None):
             seen_ranges.append((spec.start_date, spec.end_date))
-            return super().run(spec, panel)
+            return super().run(spec, panel, aux)
 
     monkeypatch.setattr(portfolio_research, "PortfolioVectorbtBackend", TrackingBackend({"A": 1.5, "B": 0.4}))
     monkeypatch.setattr(
@@ -175,9 +175,9 @@ def test_run_portfolio_spec_with_lockbox_truncates_and_reruns(monkeypatch) -> No
     seen_ranges: list[tuple[str, str]] = []
 
     class TrackingBackend(FakeBackend):
-        def run(self, spec, panel):
+        def run(self, spec, panel, aux=None):
             seen_ranges.append((spec.start_date, spec.end_date))
-            return super().run(spec, panel)
+            return super().run(spec, panel, aux)
 
     monkeypatch.setattr(portfolio_research, "PortfolioVectorbtBackend", TrackingBackend())
     monkeypatch.setattr(

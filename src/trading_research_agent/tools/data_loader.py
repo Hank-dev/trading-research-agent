@@ -439,6 +439,78 @@ def load_fred_series(
     return series
 
 
+# Currency-ETF -> OECD 3-month interbank-rate FRED series. The home country's
+# short rate is the carry proxy; carry_i = rate_i - rate_USD.
+FX_CARRY_RATE_SERIES = {
+    "FXE": "IR3TIB01DEM156N",  # EUR (Germany)
+    "FXY": "IR3TIB01JPM156N",  # JPY
+    "FXB": "IR3TIB01GBM156N",  # GBP
+    "FXF": "IR3TIB01CHM156N",  # CHF (Switzerland)
+    "FXA": "IR3TIB01AUM156N",  # AUD
+    "FXC": "IR3TIB01CAM156N",  # CAD
+}
+FX_CARRY_USD_SERIES = "IR3TIB01USM156N"
+# OECD rates are stamped at month-start and represent that whole month, published
+# with a delay. A 60-day availability lag keeps the signal safely no-look-ahead
+# (a month-start value is invisible until ~2 months later). Carry is slow-moving,
+# so over-lagging costs little and is the honest default.
+FX_CARRY_PUBLICATION_LAG_DAYS = 60
+
+
+def _carry_panel_from_rates(
+    rates_by_asset: dict[str, pd.Series],
+    usd_rate: pd.Series,
+    target_index: pd.DatetimeIndex,
+    lag_days: int,
+) -> pd.DataFrame:
+    """Turn monthly interest-rate series into a daily carry (rate-differential)
+    panel aligned to `target_index`.
+
+    Each series is shifted forward by `lag_days` (its availability date), then
+    forward-filled onto `target_index`, so any target date sees only rates whose
+    availability is on or before it. carry[asset] = rate_asset - rate_usd. Pure:
+    no network."""
+
+    def _avail_daily(series: pd.Series) -> pd.Series:
+        s = series.dropna().sort_index()
+        s.index = s.index + pd.Timedelta(days=lag_days)
+        return s.reindex(target_index, method="ffill")
+
+    usd_daily = _avail_daily(usd_rate)
+    columns = {
+        asset: _avail_daily(series) - usd_daily
+        for asset, series in rates_by_asset.items()
+    }
+    return pd.DataFrame(columns, index=target_index)
+
+
+def load_fx_carry_rates(
+    assets: list[str],
+    start: str,
+    end: str,
+    target_index: pd.DatetimeIndex,
+    lag_days: int = FX_CARRY_PUBLICATION_LAG_DAYS,
+) -> pd.DataFrame:
+    """Load the daily carry (rate-differential vs USD) panel for currency-ETF
+    `assets`, aligned to `target_index`. Rates are pulled from FRED far enough
+    before `start` to cover the lag + smoothing warmup."""
+    unknown = [a for a in assets if a.strip().upper() not in FX_CARRY_RATE_SERIES]
+    if unknown:
+        raise ValueError(
+            "fx_carry requires currency ETFs with a known rate series; "
+            f"unmapped: {unknown}. Supported: {sorted(FX_CARRY_RATE_SERIES)}"
+        )
+    # Pull rates from well before `start` so the lagged/ffilled panel is populated
+    # at the backtest's first bar.
+    rate_start = (pd.Timestamp(start) - pd.Timedelta(days=lag_days + 400)).date().isoformat()
+    usd_rate = load_fred_series(FX_CARRY_USD_SERIES, rate_start, end)
+    rates_by_asset = {
+        asset: load_fred_series(FX_CARRY_RATE_SERIES[asset.strip().upper()], rate_start, end)
+        for asset in assets
+    }
+    return _carry_panel_from_rates(rates_by_asset, usd_rate, target_index, lag_days)
+
+
 def load_ohlcv_coingecko(
     asset: str,
     start: str,

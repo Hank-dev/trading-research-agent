@@ -23,14 +23,19 @@ class PortfolioVectorbtBackend:
     monte_carlo_seed = 42
     monte_carlo_runs = 500
 
-    def run(self, spec: PortfolioSpec, panel: pd.DataFrame) -> BacktestResult:
-        weights = compute_target_weights(panel, spec)
+    def run(
+        self,
+        spec: PortfolioSpec,
+        panel: pd.DataFrame,
+        aux: pd.DataFrame | None = None,
+    ) -> BacktestResult:
+        weights = compute_target_weights(panel, spec, aux)
         portfolio = self._run_portfolio(spec, panel, weights)
         benchmark_return_pct = self._benchmark_return_pct(spec, panel)
         metrics = self._metrics_from_portfolio(portfolio, benchmark_return_pct)
         robustness_results = [
             self._rebalance_count_check(weights),
-            self._walk_forward_check(spec, panel),
+            self._walk_forward_check(spec, panel, aux),
             self._monte_carlo_check(portfolio.returns()),
         ]
 
@@ -98,7 +103,9 @@ class PortfolioVectorbtBackend:
             details=f"{rebalances} rebalance event(s); require at least 6 for evidence.",
         )
 
-    def _walk_forward_check(self, spec: PortfolioSpec, panel: pd.DataFrame) -> RobustnessResult:
+    def _walk_forward_check(
+        self, spec: PortfolioSpec, panel: pd.DataFrame, aux: pd.DataFrame | None = None
+    ) -> RobustnessResult:
         min_window_rows = 252
         max_windows = 4
         if len(panel) < min_window_rows * 2:
@@ -117,7 +124,7 @@ class PortfolioVectorbtBackend:
         for window in windows:
             if len(window) < spec.lookback_days + spec.rebalance_days:
                 continue
-            weights = compute_target_weights(window, spec)
+            weights = compute_target_weights(window, spec, aux)
             portfolio = self._run_portfolio(spec, window, weights)
             returns.append(_safe_float(portfolio.total_return()) * 100)
             benchmark_returns.append(equal_weight_benchmark_return_pct(window))

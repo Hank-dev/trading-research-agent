@@ -37,6 +37,12 @@ class PortfolioFamily(str, Enum):
     # recent `skip_recent_days`. The skip-recent gap is what makes this orthogonal
     # to 6-12mo momentum rather than merely inverted momentum.
     CROSS_SECTIONAL_REVERSAL = "cross_sectional_reversal"
+    # FX carry: hold the top_k currency ETFs with the highest short-rate
+    # differential vs USD. The signal is NOT a price function — it is fed an
+    # external rate-differential panel (interest rates), which is what makes carry
+    # a genuinely different driver than the price-only families. lookback_days is
+    # reused as the carry-smoothing window.
+    FX_CARRY = "fx_carry"
 
 
 class PortfolioSpec(BaseModel):
@@ -124,6 +130,7 @@ class PortfolioSpec(BaseModel):
             PortfolioFamily.CROSS_SECTIONAL_MOMENTUM,
             PortfolioFamily.DUAL_MOMENTUM,
             PortfolioFamily.CROSS_SECTIONAL_REVERSAL,
+            PortfolioFamily.FX_CARRY,
         ):
             if self.top_k < 1:
                 raise ValueError("top_k must be >= 1")

@@ -23,8 +23,21 @@ from trading_research_agent.backtesting.backends.portfolio_vectorbt import (
     _import_vectorbt,
 )
 from trading_research_agent.schemas.portfolio import PortfolioFamily, PortfolioSpec
-from trading_research_agent.tools.data_loader import load_portfolio_panel
+from trading_research_agent.tools.data_loader import (
+    load_fx_carry_rates,
+    load_portfolio_panel,
+)
 from trading_research_agent.tools.portfolio_signals import compute_target_weights
+
+
+def _aux_for(spec: PortfolioSpec, panel: pd.DataFrame) -> pd.DataFrame | None:
+    """fx_carry needs a rate-differential panel aligned to the price index;
+    other families are price-only."""
+    if spec.portfolio_family == PortfolioFamily.FX_CARRY:
+        return load_fx_carry_rates(
+            spec.assets, spec.start_date, spec.end_date, panel.index
+        )
+    return None
 
 PAPER_PATH = Path("outputs/paper_positions.jsonl")
 _MIN_FORWARD_DAYS = 63  # ~3 trading months before forward evidence means much
@@ -60,7 +73,7 @@ def open_paper_position(
 
     spec = spec_from_winner(winner)
     panel = load_portfolio_panel(spec.assets, spec.start_date, spec.end_date)
-    result = PortfolioVectorbtBackend().run(spec, panel)
+    result = PortfolioVectorbtBackend().run(spec, panel, _aux_for(spec, panel))
     m = result.metrics
 
     span_days = (
@@ -221,7 +234,7 @@ def _read(
 
 def _forward_equity(spec: PortfolioSpec, panel: pd.DataFrame) -> pd.Series:
     vbt = _import_vectorbt()
-    weights = compute_target_weights(panel, spec)
+    weights = compute_target_weights(panel, spec, _aux_for(spec, panel))
     portfolio = vbt.Portfolio.from_orders(
         close=panel,
         size=weights,
