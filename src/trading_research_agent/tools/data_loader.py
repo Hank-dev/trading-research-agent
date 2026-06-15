@@ -13,6 +13,8 @@ from urllib.request import Request, urlopen
 import pandas as pd
 import yfinance as yf
 
+from trading_research_agent.config import get_output_path
+
 
 REQUIRED_OHLCV_COLUMNS = ["Open", "High", "Low", "Close", "Volume"]
 COINGECKO_PUBLIC_BASE_URL = "https://api.coingecko.com/api/v3"
@@ -20,7 +22,6 @@ COINMETRICS_COMMUNITY_BASE_URL = "https://community-api.coinmetrics.io/v4"
 STOOQ_BASE_URL = "https://stooq.com/q/d/l/"
 FRED_GRAPH_BASE_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv"
 TIINGO_BASE_URL = "https://api.tiingo.com/tiingo/daily"
-DEFAULT_PRICE_CACHE_DIR = Path("outputs/cache")
 
 
 def load_ohlcv_yfinance(ticker: str, start: str, end: str) -> pd.DataFrame:
@@ -135,7 +136,7 @@ def _price_cache_enabled() -> bool:
 
 def _price_cache_root() -> Path:
     configured = os.getenv("TRADING_RESEARCH_CACHE_DIR")
-    return Path(configured) if configured else DEFAULT_PRICE_CACHE_DIR
+    return Path(configured) if configured else get_output_path("cache")
 
 
 def _tiingo_cache_path(symbol: str, base_url: str) -> Path:

@@ -23,7 +23,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--save-report",
         action="store_true",
-        help="Save the generated Markdown report under outputs/",
+        help="Save the generated Markdown report under the configured output directory.",
     )
     parser.add_argument(
         "--iterate-once",
@@ -216,7 +216,7 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help=(
             "Render a self-contained, read-only HTML dashboard of history, verdicts, "
-            "and forward paper-trade curves to outputs/dashboard.html. Exits after."
+            "and forward paper-trade curves to the configured output directory. Exits after."
         ),
     )
     parser.add_argument(

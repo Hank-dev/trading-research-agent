@@ -146,6 +146,17 @@ def test_append_and_load_roundtrip(tmp_path: Path) -> None:
     assert loaded[1]["asset"] == "QQQ"
 
 
+def test_default_history_path_uses_configured_output_dir(monkeypatch, tmp_path: Path) -> None:
+    output_dir = tmp_path / "vps-output"
+    monkeypatch.setenv("TRADING_RESEARCH_OUTPUT_DIR", str(output_dir))
+
+    history.append_run_record({"asset": "BTC", "verdict": "reject"})
+
+    loaded = history.load_history()
+    assert loaded == [{"asset": "BTC", "verdict": "reject"}]
+    assert (output_dir / "history.jsonl").exists()
+
+
 def test_load_history_returns_empty_when_file_missing(tmp_path: Path) -> None:
     assert history.load_history(path=tmp_path / "nope.jsonl") == []
 

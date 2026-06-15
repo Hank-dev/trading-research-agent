@@ -1,5 +1,6 @@
 import os
 from dataclasses import dataclass
+from pathlib import Path
 
 from dotenv import load_dotenv
 
@@ -14,6 +15,7 @@ DEFAULT_SLIPPAGE_PCT = 0.0005    # 0.05% per trade
 # Trailing fraction of the date range reserved as a held-out lockbox for the
 # out-of-sample confirmation gate (used by robustness stress-testing).
 DEFAULT_LOCKBOX_PCT = 0.20
+DEFAULT_OUTPUT_DIR = "outputs"
 
 
 @dataclass(frozen=True)
@@ -22,6 +24,15 @@ class Settings:
     api_key: str
     model: str
     base_url: str | None = None
+
+
+def get_output_dir() -> Path:
+    configured = os.getenv("TRADING_RESEARCH_OUTPUT_DIR", DEFAULT_OUTPUT_DIR).strip()
+    return Path(configured or DEFAULT_OUTPUT_DIR)
+
+
+def get_output_path(*parts: str) -> Path:
+    return get_output_dir().joinpath(*parts)
 
 
 def load_settings() -> Settings:

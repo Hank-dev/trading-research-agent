@@ -1,0 +1,13 @@
+services:
+  trade-research:
+    build: .
+    image: trading-research-agent:latest
+    env_file:
+      - .env
+    environment:
+      MPLBACKEND: Agg
+      TRADING_RESEARCH_OUTPUT_DIR: /app/outputs
+      TRADING_RESEARCH_CACHE_DIR: /app/outputs/cache
+    volumes:
+      - ./outputs:/app/outputs
+    command: ["--help"]

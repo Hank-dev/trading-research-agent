@@ -22,6 +22,7 @@ from trading_research_agent.backtesting.backends.portfolio_vectorbt import (
     PortfolioVectorbtBackend,
     _import_vectorbt,
 )
+from trading_research_agent.config import get_output_path
 from trading_research_agent.schemas.portfolio import PortfolioFamily, PortfolioSpec
 from trading_research_agent.tools.data_loader import (
     load_fx_carry_rates,
@@ -39,17 +40,24 @@ def _aux_for(spec: PortfolioSpec, panel: pd.DataFrame) -> pd.DataFrame | None:
         )
     return None
 
-PAPER_PATH = Path("outputs/paper_positions.jsonl")
+PAPER_FILENAME = "paper_positions.jsonl"
+PAPER_PATH = get_output_path(PAPER_FILENAME)
 _MIN_FORWARD_DAYS = 63  # ~3 trading months before forward evidence means much
 
 
-def append_paper_position(record: dict[str, Any], path: Path = PAPER_PATH) -> None:
-    path.parent.mkdir(exist_ok=True)
+def default_paper_path() -> Path:
+    return get_output_path(PAPER_FILENAME)
+
+
+def append_paper_position(record: dict[str, Any], path: Path | None = None) -> None:
+    path = path or default_paper_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as fh:
         fh.write(json.dumps(record, sort_keys=True) + "\n")
 
 
-def load_paper_positions(path: Path = PAPER_PATH) -> list[dict[str, Any]]:
+def load_paper_positions(path: Path | None = None) -> list[dict[str, Any]]:
+    path = path or default_paper_path()
     if not path.exists():
         return []
     out: list[dict[str, Any]] = []
@@ -65,7 +73,7 @@ def load_paper_positions(path: Path = PAPER_PATH) -> list[dict[str, Any]]:
 
 
 def open_paper_position(
-    winner: dict[str, Any], inception: str | None = None, path: Path = PAPER_PATH
+    winner: dict[str, Any], inception: str | None = None, path: Path | None = None
 ) -> dict[str, Any]:
     """Open a paper position from a reconstructed confirmed winner. Runs one
     full-period backtest to capture the expectation, then records the position."""

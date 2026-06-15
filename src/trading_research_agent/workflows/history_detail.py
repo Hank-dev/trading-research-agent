@@ -5,15 +5,16 @@ from pathlib import Path
 import re
 from typing import Any
 
-from trading_research_agent.tools.history import HISTORY_PATH, load_history
-from trading_research_agent.workflows.paper_trading import PAPER_PATH, load_paper_positions
+from trading_research_agent.config import get_output_dir
+from trading_research_agent.tools.history import load_history
+from trading_research_agent.workflows.paper_trading import load_paper_positions
 
 
 def build_history_detail(
     identifier: str,
     *,
-    history_path: Path = HISTORY_PATH,
-    paper_path: Path = PAPER_PATH,
+    history_path: Path | None = None,
+    paper_path: Path | None = None,
 ) -> dict[str, Any]:
     records = load_history(path=history_path)
     if not records:
@@ -48,7 +49,7 @@ def render_history_detail_markdown(detail: dict[str, Any]) -> str:
     status = detail.get("status")
     identifier = detail.get("identifier", "")
     if status == "no_history":
-        return "No history yet. Run some backtests to populate outputs/history.jsonl."
+        return "No history yet. Run some backtests to populate the configured history file."
     if status == "not_found":
         return f"No history record matched `{identifier}`."
     if status != "ok":
@@ -128,9 +129,10 @@ def save_history_detail_report(
     markdown: str,
     identifier: str,
     *,
-    output_dir: Path = Path("outputs"),
+    output_dir: Path | None = None,
 ) -> str:
-    output_dir.mkdir(exist_ok=True)
+    output_dir = output_dir or get_output_dir()
+    output_dir.mkdir(parents=True, exist_ok=True)
     safe = re.sub(r"[^A-Za-z0-9_-]+", "_", identifier).strip("_").lower() or "history_detail"
     timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
     path = output_dir / f"{timestamp}_{safe}_history_detail.md"

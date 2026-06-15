@@ -4,6 +4,7 @@ import re
 
 from pydantic import BaseModel
 
+from trading_research_agent.config import get_output_dir
 from trading_research_agent.schemas.backtest import BacktestResult
 from trading_research_agent.schemas.critique import StrategyCritique
 from trading_research_agent.schemas.report import ResearchReport
@@ -50,8 +51,8 @@ def build_research_report(
 
 
 def save_markdown_report(report: ResearchReport, strategy_name: str = "research") -> ResearchReport:
-    output_dir = Path("outputs")
-    output_dir.mkdir(exist_ok=True)
+    output_dir = get_output_dir()
+    output_dir.mkdir(parents=True, exist_ok=True)
     safe_name = re.sub(r"[^A-Za-z0-9_-]+", "_", strategy_name).strip("_").lower()
     timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
     path = output_dir / f"{timestamp}_{safe_name}_report.md"

@@ -5,6 +5,8 @@ import re
 
 import pandas as pd
 
+from trading_research_agent.config import get_output_dir
+
 matplotlib_cache = Path("/tmp/trading_research_agent_matplotlib")
 matplotlib_cache.mkdir(exist_ok=True)
 os.environ.setdefault("MPLCONFIGDIR", str(matplotlib_cache))
@@ -17,8 +19,8 @@ import matplotlib.pyplot as plt  # noqa: E402
 
 
 def save_equity_curve(equity_curve: pd.Series, strategy_name: str) -> str:
-    output_dir = Path("outputs")
-    output_dir.mkdir(exist_ok=True)
+    output_dir = get_output_dir()
+    output_dir.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
     safe_name = re.sub(r"[^A-Za-z0-9_-]+", "_", strategy_name).strip("_").lower()
     path = output_dir / f"{timestamp}_{safe_name}_equity_curve.png"

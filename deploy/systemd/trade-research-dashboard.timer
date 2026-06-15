@@ -1,0 +1,10 @@
+[Unit]
+Description=Refresh Trading Research Agent dashboard daily
+
+[Timer]
+OnCalendar=*-*-* 06:15:00
+Persistent=true
+RandomizedDelaySec=10m
+
+[Install]
+WantedBy=timers.target

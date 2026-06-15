@@ -5,7 +5,8 @@ One JSONL row per backtested hypothesis — including each candidate inside an
 what has been tried and which gates have been hardest to clear, without an LLM
 in the loop.
 
-The file lives at `outputs/history.jsonl` so it inherits the existing gitignore.
+The file lives at `outputs/history.jsonl` by default, or under
+`TRADING_RESEARCH_OUTPUT_DIR` when configured for deployment.
 """
 
 from collections import Counter
@@ -14,19 +15,27 @@ import json
 from pathlib import Path
 from typing import Any
 
+from trading_research_agent.config import get_output_path
 from trading_research_agent.schemas.strategy import StrategySpec
 
 
-HISTORY_PATH = Path("outputs/history.jsonl")
+HISTORY_FILENAME = "history.jsonl"
+HISTORY_PATH = get_output_path(HISTORY_FILENAME)
 
 
-def append_run_record(record: dict[str, Any], path: Path = HISTORY_PATH) -> None:
-    path.parent.mkdir(exist_ok=True)
+def default_history_path() -> Path:
+    return get_output_path(HISTORY_FILENAME)
+
+
+def append_run_record(record: dict[str, Any], path: Path | None = None) -> None:
+    path = path or default_history_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as fh:
         fh.write(json.dumps(record, sort_keys=True) + "\n")
 
 
-def load_history(path: Path = HISTORY_PATH) -> list[dict[str, Any]]:
+def load_history(path: Path | None = None) -> list[dict[str, Any]]:
+    path = path or default_history_path()
     if not path.exists():
         return []
     records: list[dict[str, Any]] = []
@@ -187,7 +196,7 @@ def summarize_history(records: list[dict[str, Any]]) -> dict[str, Any]:
 
 def format_summary(summary: dict[str, Any]) -> str:
     if summary["total_trials"] == 0:
-        return "No history yet. Run some backtests to populate outputs/history.jsonl."
+        return f"No history yet. Run some backtests to populate {default_history_path()}."
 
     lines: list[str] = []
     span = ""

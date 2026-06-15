@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 
 from trading_research_agent import config
@@ -47,3 +49,17 @@ def test_loads_openai_settings(monkeypatch: pytest.MonkeyPatch) -> None:
     assert settings.api_key == "test-openai-key"
     assert settings.model == "gpt-4.1-mini"
     assert settings.base_url is None
+
+
+def test_output_path_uses_configured_output_dir(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
+    output_dir = tmp_path / "research-output"
+    monkeypatch.setenv("TRADING_RESEARCH_OUTPUT_DIR", str(output_dir))
+
+    assert config.get_output_dir() == output_dir
+    assert config.get_output_path("history.jsonl") == output_dir / "history.jsonl"
+
+
+def test_output_path_falls_back_when_empty(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("TRADING_RESEARCH_OUTPUT_DIR", "")
+
+    assert config.get_output_dir() == Path("outputs")

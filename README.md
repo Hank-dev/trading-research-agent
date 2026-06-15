@@ -16,6 +16,9 @@ source .venv/bin/activate
 pip install -e ".[dev]"
 ```
 
+For VPS deployment, Docker Compose, systemd, and nginx examples are in
+[docs/VPS_DEPLOYMENT.md](docs/VPS_DEPLOYMENT.md).
+
 ## Environment Setup
 
 Copy `.env.example` to `.env` and set your xAI API key:
@@ -229,7 +232,7 @@ trade-research --iterate-until-pass --max-iterations 5 "BTC SMA crossover from 2
 - Without `TIINGO_API_KEY`, the pipeline falls back to `yfinance`, then to Stooq if `STOOQ_API_KEY` is configured.
 - Get a free Tiingo API key at https://www.tiingo.com/ (500 requests/day on the free tier, plenty for backtesting).
 
-Tiingo responses are cached locally under `outputs/cache/tiingo/` by symbol and covered date range. Re-running the same strategy, or a narrower date range already covered by a previous fetch, reuses cached rows without spending Tiingo quota. Delete `outputs/cache/tiingo/` to force a fresh download, or set `TRADING_RESEARCH_DISABLE_CACHE=1` to bypass the cache for a run.
+Tiingo responses are cached locally under `outputs/cache/tiingo/` by symbol and covered date range. Re-running the same strategy, or a narrower date range already covered by a previous fetch, reuses cached rows without spending Tiingo quota. Delete `outputs/cache/tiingo/` to force a fresh download, or set `TRADING_RESEARCH_DISABLE_CACHE=1` to bypass the cache for a run. On a VPS, set `TRADING_RESEARCH_CACHE_DIR` to a persistent path such as `/var/lib/trading-research-agent/cache`.
 
 ## Backtesting Engine Choice
 
@@ -237,7 +240,7 @@ The default research backend is `vectorbt`, which enables fast strategy runs plu
 
 ## Output Files
 
-Equity charts and optional Markdown reports are written to `outputs/`.
+Equity charts, history, paper positions, the HTML dashboard, and optional Markdown reports are written to `outputs/` by default. Set `TRADING_RESEARCH_OUTPUT_DIR` to move these files to a persistent VPS path.
 
 ## Limitations
 

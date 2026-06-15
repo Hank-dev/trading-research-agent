@@ -18,6 +18,7 @@ import io
 from pathlib import Path
 from typing import Any
 
+from trading_research_agent.config import get_output_path
 from trading_research_agent.tools.history import load_history, summarize_history
 
 # Reuse the matplotlib Agg setup from the plotting module (sets MPLCONFIGDIR + backend).
@@ -32,7 +33,7 @@ _VERDICT_COLORS = {
 
 
 def build_html_report(
-    output_path: str | Path = "outputs/dashboard.html",
+    output_path: str | Path | None = None,
     history_path: Path | None = None,
     paper_path: Path | None = None,
 ) -> str:
@@ -54,8 +55,8 @@ def build_html_report(
         generated=datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC"),
         body="\n".join(sections),
     )
-    path = Path(output_path)
-    path.parent.mkdir(exist_ok=True)
+    path = Path(output_path) if output_path is not None else get_output_path("dashboard.html")
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(html, encoding="utf-8")
     return str(path)
 

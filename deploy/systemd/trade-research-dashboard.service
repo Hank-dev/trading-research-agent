@@ -1,0 +1,18 @@
+[Unit]
+Description=Trading Research Agent dashboard refresh
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=trading-research
+Group=trading-research
+WorkingDirectory=/opt/trading-research-agent
+EnvironmentFile=/etc/trading-research-agent/trading-research-agent.env
+Environment=MPLBACKEND=Agg
+ExecStart=/opt/trading-research-agent/.venv/bin/trade-research --report-html
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=full
+ReadWritePaths=/var/lib/trading-research-agent
