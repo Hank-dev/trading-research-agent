@@ -1,13 +1,28 @@
+name: trading-research-agent
+
 services:
   trade-research:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     image: trading-research-agent:latest
     env_file:
-      - .env
+      - path: .env
+        required: false
     environment:
       MPLBACKEND: Agg
+      MPLCONFIGDIR: /tmp/matplotlib
+      PYTHONUNBUFFERED: "1"
       TRADING_RESEARCH_OUTPUT_DIR: /app/outputs
       TRADING_RESEARCH_CACHE_DIR: /app/outputs/cache
     volumes:
-      - ./outputs:/app/outputs
+      - type: bind
+        source: ${TRADING_RESEARCH_HOST_OUTPUT_DIR:-./outputs}
+        target: /app/outputs
+    init: true
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp
     command: ["--help"]

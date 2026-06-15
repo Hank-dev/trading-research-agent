@@ -6,14 +6,54 @@ the static dashboard.
 
 ## Option 1: Docker Compose
 
-1. Create `.env` from `.env.example` and fill in API keys.
-2. Build the image:
+These examples use:
+
+- App directory: `/opt/trading-research-agent`
+- Persistent data: `/var/lib/trading-research-agent/outputs`
+
+Install Docker Engine with the Compose plugin on the VPS, then clone the repo:
+
+```bash
+sudo mkdir -p /opt
+sudo git clone REPO_URL /opt/trading-research-agent
+cd /opt/trading-research-agent
+```
+
+Create the persistent output directory. The container runs as UID `10001`, so
+that user must be able to write the bind mount:
+
+```bash
+sudo mkdir -p /var/lib/trading-research-agent/outputs
+sudo chown -R 10001:10001 /var/lib/trading-research-agent
+```
+
+Create `.env` from `.env.example`, fill in API keys, and set the host output
+directory:
+
+```bash
+cp .env.example .env
+editor .env
+```
+
+Set this in `.env` for the VPS:
+
+```bash
+TRADING_RESEARCH_HOST_OUTPUT_DIR=/var/lib/trading-research-agent/outputs
+```
+
+Build the image:
 
 ```bash
 docker compose build
 ```
 
-3. Run commands through Compose:
+Smoke test the CLI:
+
+```bash
+docker compose run --rm trade-research --help
+```
+
+Run commands through Compose:
 
 ```bash
 docker compose run --rm trade-research --history
@@ -21,8 +61,27 @@ docker compose run --rm trade-research --report-html
 docker compose run --rm trade-research --portfolio-batch examples/portfolio_batch.json --lockbox-pct 0.2
 ```
 
-Compose mounts `./outputs` into the container, so history, reports, charts, the
-dashboard, and cache survive container rebuilds.
+Compose mounts `TRADING_RESEARCH_HOST_OUTPUT_DIR` into `/app/outputs` in the
+container, so history, reports, charts, the dashboard, and cache survive
+container rebuilds. If `TRADING_RESEARCH_HOST_OUTPUT_DIR` is unset, Compose
+uses `./outputs` for local development.
+
+To refresh the dashboard daily with systemd while still running the app in
+Docker:
+
+```bash
+sudo cp deploy/systemd/trade-research-dashboard-docker.service /etc/systemd/system/
+sudo cp deploy/systemd/trade-research-dashboard-docker.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now trade-research-dashboard-docker.timer
+sudo systemctl start trade-research-dashboard-docker.service
+```
+
+Check Docker timer logs:
+
+```bash
+journalctl -u trade-research-dashboard-docker.service -n 100 --no-pager
+```
 
 ## Option 2: Native Python + systemd
 

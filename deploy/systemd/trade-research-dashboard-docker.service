@@ -1,0 +1,11 @@
+[Unit]
+Description=Trading Research Agent Docker dashboard refresh
+Wants=network-online.target
+After=network-online.target docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/trading-research-agent
+Environment=COMPOSE_PROJECT_NAME=trading-research-agent
+ExecStart=/usr/bin/docker compose run --rm trade-research --report-html
