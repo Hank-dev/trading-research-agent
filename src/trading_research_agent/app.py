@@ -65,6 +65,17 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     console = Console()
+    live_flags = [
+        args.live_open,
+        args.live_tick,
+        args.live_status,
+        args.live_auto_promote,
+    ]
+    if sum(bool(flag) for flag in live_flags) > 1:
+        parser.error(
+            "--live-open, --live-tick, --live-status, and --live-auto-promote "
+            "are mutually exclusive"
+        )
 
     if args.data_health:
         return _run_data_health_mode(console, args, parser)
@@ -77,6 +88,20 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.paper_status:
         return _run_paper_status_mode(console)
+
+    if args.live_open:
+        return _run_live_open_mode(console, inception=args.inception or None)
+
+    if args.live_tick:
+        return _run_live_tick_mode(
+            console, book_id=args.book_id or None, as_of=args.as_of or None
+        )
+
+    if args.live_status:
+        return _run_live_status_mode(console, book_id=args.book_id or None)
+
+    if args.live_auto_promote:
+        return _run_live_auto_promote_mode(console)
 
     if args.report_html:
         from trading_research_agent.reports.html_dashboard import build_html_report
@@ -475,6 +500,222 @@ def _run_combined_book_mode(console: Console, args: Any, parser: argparse.Argume
     else:
         _print_combined_book_result(console, result)
     return 0
+
+
+def _run_live_open_mode(console: Console, *, inception: str | None) -> int:
+    from trading_research_agent.workflows.live_trading import open_live_book
+    from trading_research_agent.workflows.robustness_stress import (
+        latest_confirmed_portfolio_winner,
+    )
+
+    winner = latest_confirmed_portfolio_winner(load_history())
+    if winner is None:
+        console.print(
+            Panel(
+                "No lockbox-confirmed portfolio winner in history to open as a "
+                "stateful live paper book. Run a confirmed --portfolio first.",
+                title="Live Paper Book",
+            )
+        )
+        return 1
+
+    try:
+        book = open_live_book(winner, inception=inception)
+    except Exception as exc:
+        console.print(Panel(f"Could not open live paper book: {exc}", title="Live Paper Book"))
+        return 1
+
+    exp = book["expectation"]
+    console.print(
+        Panel(
+            "\n".join(
+                [
+                    f"Book id:      {book['book_id']}",
+                    f"Strategy:     {book['strategy_family']}",
+                    f"Universe:     {', '.join(book['params']['assets'])}",
+                    f"Inception:    {book['inception_date']}",
+                    f"Expectation:  {exp['annualized_return_pct']:.1f}% annualized "
+                    f"(backtest max drawdown {exp['backtest_max_drawdown_pct']:.1f}%)",
+                    "",
+                    "Stateful paper book opened. Run --live-tick after each new "
+                    "market bar to persist cash, positions, and the ledger.",
+                ]
+            ),
+            title="Live Paper Book — opened",
+        )
+    )
+    return 0
+
+
+def _run_live_tick_mode(
+    console: Console, *, book_id: str | None, as_of: str | None
+) -> int:
+    from trading_research_agent.workflows.live_trading import (
+        evaluate_live_book,
+        list_open_books,
+        load_book,
+        tick_live_book,
+    )
+
+    if book_id:
+        book = load_book(book_id)
+        if book is None:
+            console.print(Panel(f"No live paper book found for id {book_id}.", title="Live Tick"))
+            return 1
+        if book.get("status") != "open":
+            console.print(Panel(f"Book {book_id} is not open.", title="Live Tick"))
+            return 1
+        books = [book]
+    else:
+        books = list_open_books()
+
+    if not books:
+        console.print(
+            Panel("No open live paper books. Open one with --live-open.", title="Live Tick")
+        )
+        return 0
+
+    had_error = False
+    for book in books:
+        before = len(book.get("ledger", []))
+        try:
+            updated = tick_live_book(book, as_of=as_of)
+            ev = evaluate_live_book(updated)
+        except Exception as exc:
+            had_error = True
+            console.print(
+                Panel(
+                    f"Could not tick book {book.get('book_id', '?')}: {exc}",
+                    title="Live Tick",
+                )
+            )
+            continue
+
+        added = len(updated.get("ledger", [])) - before
+        console.rule(f"Live paper book {updated['book_id']}")
+        console.print(
+            Panel(
+                _format_live_book_evaluation(updated, ev, added_bars=added),
+                title="Live Tick — state updated",
+            )
+        )
+    return 1 if had_error else 0
+
+
+def _run_live_status_mode(console: Console, *, book_id: str | None) -> int:
+    from trading_research_agent.workflows.live_trading import (
+        evaluate_live_book,
+        list_books,
+        load_book,
+    )
+
+    if book_id:
+        book = load_book(book_id)
+        if book is None:
+            console.print(Panel(f"No live paper book found for id {book_id}.", title="Live Status"))
+            return 1
+        books = [book]
+    else:
+        books = list_books()
+
+    if not books:
+        console.print(
+            Panel("No live paper books. Open one with --live-open.", title="Live Status")
+        )
+        return 0
+
+    for book in books:
+        ev = evaluate_live_book(book)
+        console.rule(f"Live paper book {book['book_id']}")
+        console.print(
+            Panel(
+                _format_live_book_evaluation(book, ev),
+                title="Live Status",
+            )
+        )
+    return 0
+
+
+def _run_live_auto_promote_mode(console: Console) -> int:
+    from trading_research_agent.workflows.live_trading import auto_promote
+
+    try:
+        result = auto_promote(load_history())
+    except Exception as exc:
+        console.print(Panel(f"Live auto-promotion failed: {exc}", title="Live Auto-Promote"))
+        return 1
+
+    action = result.get("action")
+    if action == "promoted":
+        opened = ", ".join(result.get("opened", []))
+        detail = [
+            f"Opened new live paper book(s): {opened}",
+            f"Winner timestamp: {result.get('winner_ts', '?')}",
+            "",
+            "Run --live-tick to advance the new book through accrued bars.",
+        ]
+    elif action == "no_open_books":
+        detail = [
+            "No open live paper books exist yet.",
+            "Open the first one with --live-open; auto-promotion only compares "
+            "new confirmed winners against existing open books.",
+        ]
+    else:
+        detail = ["No newer lockbox-confirmed winner found."]
+
+    console.print(Panel("\n".join(detail), title="Live Auto-Promote"))
+    return 0
+
+
+def _format_live_book_evaluation(
+    book: dict[str, Any],
+    ev: dict[str, Any],
+    *,
+    added_bars: int | None = None,
+) -> str:
+    lines = [
+        f"Book id:       {book['book_id']}",
+        f"Status:        {book.get('status', 'unknown')}",
+        f"Strategy:      {book['strategy_family']}",
+        f"Universe:      {', '.join(book['params']['assets'])}",
+        f"Inception:     {book['inception_date']}",
+        f"Last bar:      {book.get('last_bar_date') or 'none'}",
+    ]
+    if added_bars is not None:
+        lines.append(f"Bars added:    {added_bars}")
+
+    if ev["status"] == "no_bars_yet":
+        lines.extend(["", ev["detail"]])
+        return "\n".join(lines)
+
+    lines.extend(
+        [
+            "",
+            f"NAV:           {ev['nav']:,.2f}",
+            f"Cash:          {float(ev['cash']):,.2f}",
+            f"Positions:     {_format_live_positions(ev['positions'])}",
+            "",
+            f"Realized ret:  {ev['realized_return_pct']:7.1f}%",
+            f"Annualized:    {ev['realized_annualized_pct']:7.1f}%   "
+            f"(backtest expected {ev['expected_annualized_pct']:.1f}%)",
+            f"Max DD:        {ev['realized_max_drawdown_pct']:7.1f}%   "
+            f"(backtest worst {ev['backtest_max_drawdown_pct']:.1f}%)",
+            f"Bars:          {ev['forward_trading_days']}",
+            "",
+            f"READ: {ev['read']}",
+            ev["detail"],
+        ]
+    )
+    return "\n".join(lines)
+
+
+def _format_live_positions(positions: dict[str, Any]) -> str:
+    nonzero = [
+        f"{asset}={float(shares):.4f}"
+        for asset, shares in positions.items()
+        if abs(float(shares)) > 1e-8
+    ]
+    return ", ".join(nonzero) if nonzero else "all cash"
 
 
 

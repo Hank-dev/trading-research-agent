@@ -269,7 +269,7 @@ def latest_confirmed_portfolio_winner(
         ]
         if not confirmed_lockbox:
             continue
-        winner = confirmed_lockbox[0]
+        winner = max(confirmed_lockbox, key=lambda r: r.get("timestamp", ""))
         params = winner.get("params", {})
         if "assets" not in params:
             continue
@@ -283,6 +283,9 @@ def latest_confirmed_portfolio_winner(
             "full_end": max(ends) if ends else None,
             "timestamp": max(timestamps) if timestamps else "",
         }
+        for field in ("initial_cash", "commission_pct", "slippage_pct"):
+            if field in winner:
+                candidate[field] = winner[field]
         if candidate["full_start"] and candidate["full_end"] and candidate["timestamp"] > best_ts:
             best = candidate
             best_ts = candidate["timestamp"]
@@ -292,14 +295,20 @@ def latest_confirmed_portfolio_winner(
 
 def spec_from_winner(winner: dict[str, Any]) -> PortfolioSpec:
     params = winner["params"]
-    return PortfolioSpec(
-        name=f"Stress: {winner['strategy_family']} {params['assets']}",
-        assets=params["assets"],
-        portfolio_family=PortfolioFamily(winner["strategy_family"]),
-        start_date=winner["full_start"],
-        end_date=winner["full_end"],
-        lookback_days=params.get("lookback_days", 126),
-        top_k=params.get("top_k", 1),
-        rebalance_days=params.get("rebalance_days", 21),
-        hypothesis="Reconstructed confirmed winner under robustness stress test.",
-    )
+    data: dict[str, Any] = {
+        "name": f"Stress: {winner['strategy_family']} {params['assets']}",
+        "assets": params["assets"],
+        "portfolio_family": PortfolioFamily(winner["strategy_family"]),
+        "start_date": winner["full_start"],
+        "end_date": winner["full_end"],
+        "lookback_days": params.get("lookback_days", 126),
+        "top_k": params.get("top_k", 1),
+        "rebalance_days": params.get("rebalance_days", 21),
+        "skip_recent_days": params.get("skip_recent_days", 252),
+        "hedge_weight": params.get("hedge_weight"),
+        "hypothesis": "Reconstructed confirmed winner under robustness stress test.",
+    }
+    for field in ("initial_cash", "commission_pct", "slippage_pct"):
+        if winner.get(field) is not None:
+            data[field] = winner[field]
+    return PortfolioSpec(**data)

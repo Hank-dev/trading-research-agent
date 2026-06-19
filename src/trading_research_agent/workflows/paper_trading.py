@@ -99,6 +99,8 @@ def open_paper_position(
             "lookback_days": spec.lookback_days,
             "top_k": spec.top_k,
             "rebalance_days": spec.rebalance_days,
+            "skip_recent_days": spec.skip_recent_days,
+            "hedge_weight": spec.hedge_weight,
         },
         "initial_cash": spec.initial_cash,
         "commission_pct": spec.commission_pct,
@@ -133,6 +135,7 @@ def _replay_forward(position: dict[str, Any], as_of: str) -> pd.Series:
         lookback_days=lookback,
         top_k=params.get("top_k", 1),
         rebalance_days=params["rebalance_days"],
+        skip_recent_days=params.get("skip_recent_days", 252),
         hedge_weight=params.get("hedge_weight"),
         hypothesis="paper-trade forward replay",
     )

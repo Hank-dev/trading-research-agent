@@ -212,6 +212,49 @@ def build_parser() -> argparse.ArgumentParser:
         help="Replay open paper positions forward from inception and report live performance vs the backtest.",
     )
     parser.add_argument(
+        "--live-open",
+        action="store_true",
+        help=(
+            "Open a stateful live paper book on the most recent lockbox-confirmed "
+            "portfolio winner. Does not place broker orders."
+        ),
+    )
+    parser.add_argument(
+        "--live-tick",
+        action="store_true",
+        help=(
+            "Advance stateful live paper book(s) through the latest available bar, "
+            "persisting cash, positions, and the daily ledger."
+        ),
+    )
+    parser.add_argument(
+        "--live-status",
+        action="store_true",
+        help="List/evaluate stateful live paper book(s) without advancing them.",
+    )
+    parser.add_argument(
+        "--live-auto-promote",
+        action="store_true",
+        help=(
+            "Open a new parallel live paper book if history contains a newer "
+            "lockbox-confirmed winner than the current open books."
+        ),
+    )
+    parser.add_argument(
+        "--book-id",
+        type=str,
+        default="",
+        metavar="ID",
+        help="Optional live paper book id for --live-tick or --live-status.",
+    )
+    parser.add_argument(
+        "--as-of",
+        type=str,
+        default="",
+        metavar="YYYY-MM-DD",
+        help="Optional cutoff date for --live-tick (default: today).",
+    )
+    parser.add_argument(
         "--report-html",
         action="store_true",
         help=(

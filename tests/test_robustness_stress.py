@@ -178,6 +178,52 @@ def test_latest_confirmed_portfolio_winner_joins_by_slate_id() -> None:
     assert spec.end_date == "2024-01-01"
 
 
+def test_spec_from_winner_preserves_optional_portfolio_knobs() -> None:
+    winner = {
+        "strategy_family": "cross_sectional_reversal",
+        "params": {
+            "assets": ["SPY", "TLT", "GLD"],
+            "lookback_days": 1008,
+            "skip_recent_days": 126,
+            "top_k": 1,
+            "rebalance_days": 21,
+        },
+        "full_start": "2010-01-01",
+        "full_end": "2024-01-01",
+        "initial_cash": 50_000.0,
+        "commission_pct": 0.002,
+        "slippage_pct": 0.0007,
+    }
+
+    spec = rs.spec_from_winner(winner)
+
+    assert spec.portfolio_family == PortfolioFamily.CROSS_SECTIONAL_REVERSAL
+    assert spec.skip_recent_days == 126
+    assert spec.initial_cash == 50_000.0
+    assert spec.commission_pct == 0.002
+    assert spec.slippage_pct == 0.0007
+
+
+def test_spec_from_winner_preserves_crisis_hedge_weight() -> None:
+    winner = {
+        "strategy_family": "crisis_hedge",
+        "params": {
+            "assets": ["SPY", "VIXY"],
+            "lookback_days": 200,
+            "top_k": 1,
+            "rebalance_days": 5,
+            "hedge_weight": 0.2,
+        },
+        "full_start": "2012-01-01",
+        "full_end": "2024-01-01",
+    }
+
+    spec = rs.spec_from_winner(winner)
+
+    assert spec.portfolio_family == PortfolioFamily.CRISIS_HEDGE
+    assert spec.hedge_weight == 0.2
+
+
 def test_latest_confirmed_winner_none_when_no_lockbox_pass() -> None:
     records = [
         {

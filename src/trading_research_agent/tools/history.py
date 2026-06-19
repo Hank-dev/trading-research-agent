@@ -106,18 +106,25 @@ def _spec_record(spec: Any) -> dict[str, Any]:
     """Build the spec portion of a record, handling both single-asset
     StrategySpec and multi-asset PortfolioSpec."""
     if hasattr(spec, "portfolio_family"):
+        params: dict[str, Any] = {
+            "assets": list(spec.assets),
+            "lookback_days": spec.lookback_days,
+            "top_k": spec.top_k,
+            "rebalance_days": spec.rebalance_days,
+            "skip_recent_days": spec.skip_recent_days,
+        }
+        if spec.hedge_weight is not None:
+            params["hedge_weight"] = spec.hedge_weight
         return {
             "asset": "PORTFOLIO[" + ",".join(spec.assets) + "]",
             "strategy_family": spec.portfolio_family.value,
             "data_source": spec.data_source.value if spec.data_source else "auto",
             "start_date": spec.start_date,
             "end_date": spec.end_date,
-            "params": {
-                "assets": list(spec.assets),
-                "lookback_days": spec.lookback_days,
-                "top_k": spec.top_k,
-                "rebalance_days": spec.rebalance_days,
-            },
+            "initial_cash": spec.initial_cash,
+            "commission_pct": spec.commission_pct,
+            "slippage_pct": spec.slippage_pct,
+            "params": params,
         }
     return {
         "asset": spec.asset,

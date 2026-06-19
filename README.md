@@ -53,6 +53,18 @@ trade-research --paper-status                     # replay forward, realized vs 
 
 Inception defaults to the backtest's end date — the exact boundary past which every bar is out of sample. `--paper-status` reports realized return / annualized / drawdown since inception against the backtested expectation, with a read of `TOO_EARLY`, `TRACKING`, `DIVERGING`, or `DRAWDOWN_BREACH`. Re-run it over weeks and months; the longer the forward record, the more it can confirm or break a strategy that nothing else can.
 
+For a persistent paper book with cash, positions, and a daily ledger:
+
+```bash
+trade-research --live-open                        # open a stateful paper book
+trade-research --live-tick                        # advance every open book to latest data
+trade-research --live-tick --book-id abc123 --as-of 2026-06-19
+trade-research --live-status                      # inspect NAV/cash/positions
+trade-research --live-auto-promote                # open a new book for a newer confirmed winner
+```
+
+These `--live-*` commands still do **not** place broker orders. They persist a stateful paper-trading book under `outputs/live_books/` so repeated ticks are idempotent and auditable.
+
 ### Combined-book evaluation (the honest way to judge a hedge)
 
 A hedge usually loses money in isolation, so a standalone backtest answers the wrong question. This mode answers the right one: does a small overlay improve the *combined* book versus holding the core alone?
