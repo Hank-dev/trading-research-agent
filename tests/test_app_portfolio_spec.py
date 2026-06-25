@@ -164,6 +164,48 @@ def test_portfolio_batch_cli_runs_file_and_refreshes_dashboard(monkeypatch) -> N
     assert captured["dashboard_refreshed"] is True
 
 
+def test_mine_anomalies_cli_runs_miner(monkeypatch) -> None:
+    captured = {}
+
+    def fake_mine_anomalies(assets, start, end, top_n=12):
+        captured["assets"] = assets
+        captured["start"] = start
+        captured["end"] = end
+        captured["top_n"] = top_n
+        return {"assets": assets, "start": start, "end": end, "facts": []}
+
+    monkeypatch.setattr(
+        "trading_research_agent.workflows.anomaly_miner.mine_anomalies",
+        fake_mine_anomalies,
+    )
+    monkeypatch.setattr(
+        "trading_research_agent.workflows.anomaly_miner.format_anomaly_report",
+        lambda result: "anomaly report",
+    )
+
+    code = app.main(
+        [
+            "--mine-anomalies",
+            "--assets",
+            "SPY,TLT,GLD",
+            "--start",
+            "2010-01-01",
+            "--end",
+            "2024-12-31",
+            "--top-anomalies",
+            "5",
+        ]
+    )
+
+    assert code == 0
+    assert captured == {
+        "assets": ["SPY", "TLT", "GLD"],
+        "start": "2010-01-01",
+        "end": "2024-12-31",
+        "top_n": 5,
+    }
+
+
 def test_history_detail_cli_prints_without_rerunning(monkeypatch) -> None:
     captured = {}
 
