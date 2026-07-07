@@ -13,6 +13,9 @@ def clear_llm_env(monkeypatch: pytest.MonkeyPatch) -> None:
         "XAI_BASE_URL",
         "OPENAI_API_KEY",
         "OPENAI_MODEL",
+        "DEEPSEEK_API_KEY",
+        "DEEPSEEK_MODEL",
+        "DEEPSEEK_BASE_URL",
     ]:
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setattr(config, "load_dotenv", lambda: None)
@@ -49,6 +52,19 @@ def test_loads_openai_settings(monkeypatch: pytest.MonkeyPatch) -> None:
     assert settings.api_key == "test-openai-key"
     assert settings.model == "gpt-4.1-mini"
     assert settings.base_url is None
+
+
+def test_loads_deepseek_settings(monkeypatch: pytest.MonkeyPatch) -> None:
+    clear_llm_env(monkeypatch)
+    monkeypatch.setenv("LLM_PROVIDER", "deepseek")
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "test-deepseek-key")
+
+    settings = config.load_settings()
+
+    assert settings.llm_provider == "deepseek"
+    assert settings.api_key == "test-deepseek-key"
+    assert settings.model == "deepseek-chat"
+    assert settings.base_url == "https://api.deepseek.com/v1"
 
 
 def test_output_path_uses_configured_output_dir(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:

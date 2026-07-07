@@ -63,6 +63,44 @@ def test_anomaly_miner_reports_regime_conditioned_asymmetry() -> None:
     assert "down-trend" in fact.fact
 
 
+def test_event_followthrough_miner_finds_conditional_spread() -> None:
+    rng = np.random.default_rng(11)
+    idx = pd.date_range("2018-01-01", periods=700, freq="B")
+    leader_rets = pd.Series(rng.normal(0, 0.01, len(idx)), index=idx)
+    leader_price = 100 * (1 + leader_rets).cumprod()
+
+    event_return = leader_price.pct_change(20)
+    z = (event_return - event_return.rolling(252, min_periods=80).mean()) / event_return.rolling(
+        252, min_periods=80
+    ).std()
+    follower_rets = pd.Series(rng.normal(0, 0.002, len(idx)), index=idx)
+    follower_rets.loc[z.shift(5) >= 1.0] += 0.006
+    follower_rets.loc[z.shift(5) <= -1.0] -= 0.006
+    panel = pd.DataFrame(
+        {
+            "LEADER": leader_price,
+            "FOLLOWER": 100 * (1 + follower_rets).cumprod(),
+        },
+        index=idx,
+    )
+
+    facts = am.mine_event_followthrough_anomalies(
+        panel,
+        lags=(5,),
+        horizon=5,
+        min_events=10,
+        min_spread_pct=1.0,
+        top_n=3,
+    )
+
+    fact = next(f for f in facts if f.leader == "LEADER" and f.follower == "FOLLOWER")
+    assert fact.kind == "event_followthrough"
+    assert fact.lag_days == 5
+    assert fact.train_score is not None and fact.train_score > 0
+    assert fact.holdout_score is not None and fact.holdout_score > 0
+    assert fact.adjusted_p_value is not None
+
+
 def test_mine_anomalies_combines_and_sorts_facts(monkeypatch) -> None:
     panel = _panel_with_lagged_relationship()
     monkeypatch.setattr(am, "load_portfolio_panel", lambda assets, start, end: panel)
@@ -75,6 +113,7 @@ def test_mine_anomalies_combines_and_sorts_facts(monkeypatch) -> None:
     )
 
     assert result["assets"] == ["LEADER", "FOLLOWER", "NOISE"]
+    assert result["tests_scanned"] > 0
     assert result["facts"]
     assert result["facts"][0].score >= result["facts"][-1].score
     assert "lead_lag" in {fact.kind for fact in result["facts"]}

@@ -42,7 +42,9 @@ def load_settings() -> Settings:
         return _load_xai_settings()
     if provider == "openai":
         return _load_openai_settings()
-    raise RuntimeError("Unsupported LLM_PROVIDER. Use 'xai' or 'openai'.")
+    if provider == "deepseek":
+        return _load_deepseek_settings()
+    raise RuntimeError("Unsupported LLM_PROVIDER. Use 'xai', 'openai', or 'deepseek'.")
 
 
 def _resolve_provider() -> str:
@@ -53,6 +55,8 @@ def _resolve_provider() -> str:
         return "xai"
     if os.getenv("OPENAI_API_KEY"):
         return "openai"
+    if os.getenv("DEEPSEEK_API_KEY"):
+        return "deepseek"
     return "xai"
 
 
@@ -76,4 +80,17 @@ def _load_openai_settings() -> Settings:
         llm_provider="openai",
         api_key=api_key,
         model=os.getenv("OPENAI_MODEL", "gpt-4.1-mini"),
+        base_url=os.getenv("OPENAI_BASE_URL") or None,
+    )
+
+
+def _load_deepseek_settings() -> Settings:
+    api_key = os.getenv("DEEPSEEK_API_KEY")
+    if not api_key:
+        raise RuntimeError("Missing DEEPSEEK_API_KEY. Add it to your .env file.")
+    return Settings(
+        llm_provider="deepseek",
+        api_key=api_key,
+        model=os.getenv("DEEPSEEK_MODEL", "deepseek-chat"),
+        base_url=os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1"),
     )

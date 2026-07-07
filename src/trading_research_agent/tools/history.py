@@ -164,9 +164,11 @@ def summarize_history(records: list[dict[str, Any]]) -> dict[str, Any]:
     by_asset: Counter[str] = Counter()
     by_family: Counter[str] = Counter()
     by_verdict: Counter[str] = Counter()
+    by_learning_status: Counter[str] = Counter()
     failed_checks: Counter[str] = Counter()
     asset_family_pairs: Counter[tuple[str, str]] = Counter()
     passed_runs: list[dict[str, Any]] = []
+    learning_records: list[dict[str, Any]] = []
 
     for r in trials:
         asset = r.get("asset", "unknown")
@@ -180,6 +182,9 @@ def summarize_history(records: list[dict[str, Any]]) -> dict[str, Any]:
             failed_checks[check] += 1
         if verdict == "worth_paper_trading":
             passed_runs.append(r)
+        if r.get("learning_status"):
+            by_learning_status[r["learning_status"]] += 1
+            learning_records.append(r)
 
     timestamps = [r["timestamp"] for r in records if "timestamp" in r]
     return {
@@ -192,12 +197,18 @@ def summarize_history(records: list[dict[str, Any]]) -> dict[str, Any]:
         "by_asset": dict(by_asset.most_common()),
         "by_family": dict(by_family.most_common()),
         "by_verdict": dict(by_verdict.most_common()),
+        "by_learning_status": dict(by_learning_status.most_common()),
         "failed_checks": dict(failed_checks.most_common()),
         "asset_family_pairs": {
             f"{asset} / {family}": count
             for (asset, family), count in asset_family_pairs.most_common()
         },
         "passed_runs": passed_runs,
+        "learning_records": sorted(
+            learning_records,
+            key=lambda r: r.get("timestamp", ""),
+            reverse=True,
+        ),
     }
 
 
@@ -220,6 +231,12 @@ def format_summary(summary: dict[str, Any]) -> str:
         lines.append("By verdict:")
         for verdict, count in summary["by_verdict"].items():
             lines.append(f"  {count:>4}x  {verdict}")
+        lines.append("")
+
+    if summary.get("by_learning_status"):
+        lines.append("Structured learnings:")
+        for status, count in summary["by_learning_status"].items():
+            lines.append(f"  {count:>4}x  {status}")
         lines.append("")
 
     if summary["by_asset"]:
@@ -256,6 +273,15 @@ def format_summary(summary: dict[str, Any]) -> str:
         lines.append("")
     else:
         lines.append("No runs have reached worth_paper_trading yet.")
+        lines.append("")
+
+    if summary.get("learning_records"):
+        lines.append("Recent lessons:")
+        for r in summary["learning_records"][:5]:
+            status = r.get("learning_status", "?")
+            asset = r.get("asset", "?")
+            lesson = r.get("lesson", "")
+            lines.append(f"  {status}: {asset} — {lesson}")
         lines.append("")
 
     lines.append("Cross-run multiple-testing note:")

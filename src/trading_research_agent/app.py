@@ -84,6 +84,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.mine_anomalies:
         return _run_mine_anomalies_mode(console, args, parser)
 
+    if args.event_followthrough:
+        return _run_event_followthrough_mode(console, args, parser)
+
     if args.combined_book:
         return _run_combined_book_mode(console, args, parser)
 
@@ -519,6 +522,42 @@ def _run_mine_anomalies_mode(
 
     console.print(Panel(format_anomaly_report(result), title="Market Anomaly Facts"))
     return 0
+
+
+def _run_event_followthrough_mode(
+    console: Console, args: Any, parser: argparse.ArgumentParser
+) -> int:
+    if args.idea:
+        parser.error("--event-followthrough does not take an idea; use --assets, --start, --end")
+    assets = _parse_symbol_csv(args.assets)
+    if not assets or not args.start or not args.end:
+        parser.error("--event-followthrough requires --assets, --start and --end")
+    if args.lockbox_pct <= 0:
+        parser.error("--event-followthrough requires --lockbox-pct > 0 (e.g. 0.25)")
+
+    from trading_research_agent.workflows.event_followthrough import (
+        format_event_followthrough_lab,
+        learning_records_from_event_followthrough,
+        run_event_followthrough_lab,
+    )
+
+    try:
+        result = run_event_followthrough_lab(
+            assets,
+            args.start,
+            args.end,
+            max_candidates=args.explore if args.explore > 0 else 6,
+            lockbox_pct=args.lockbox_pct,
+        )
+    except Exception as exc:
+        console.print(Panel(f"Event-followthrough lab failed: {exc}", title="Event Followthrough"))
+        return 1
+
+    console.print(Panel(format_event_followthrough_lab(result), title="Event Followthrough Strategies"))
+    for record in learning_records_from_event_followthrough(result):
+        _log_history_safely(record)
+    _refresh_dashboard_safely(console)
+    return 0 if result["summary"]["robust_survivors"] > 0 else 1
 
 
 def _run_history_detail_mode(console: Console, args: Any) -> int:

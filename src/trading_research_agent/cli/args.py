@@ -219,6 +219,15 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--event-followthrough",
+        action="store_true",
+        help=(
+            "Generate frozen delayed event-trigger strategies from mined event-followthrough "
+            "facts, then evaluate train/lockbox/neighborhood stress. Requires --assets, "
+            "--start, --end, --lockbox-pct. Uses --explore N as candidate cap or defaults to 6."
+        ),
+    )
+    parser.add_argument(
         "--top-anomalies",
         type=int,
         default=12,
