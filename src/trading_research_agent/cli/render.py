@@ -372,6 +372,76 @@ def _print_campaign_summary(
     console.print(Panel("\n".join(lines), title="Campaign Summary"))
 
 
+def _print_creative_lab_result(console: Console, result: dict[str, Any]) -> None:
+    summary = result.get("summary", {})
+    lines = [
+        f"Assets: {', '.join(result.get('assets', []))}",
+        f"Train: {result.get('train_start')} to {result.get('train_end')}",
+        f"Lockbox: {result.get('lockbox_start')} to {result.get('full_end')} ({result.get('lockbox_pct', 0):.0%})",
+        "",
+        f"Pre-registered candidates: {summary.get('pre_registered_candidates', 0)}",
+        f"Train survivors:           {summary.get('train_survivors', 0)}/{summary.get('pre_registered_candidates', 0)}",
+        f"Lockbox survivors:         {summary.get('lockbox_survivors', 0)}/{summary.get('train_survivors', 0)}",
+        f"Robust stress survivors:   {summary.get('stress_survivors', 0)}/{summary.get('lockbox_survivors', 0)}",
+        "",
+        f"VERDICT: {summary.get('verdict', '?')}",
+        "",
+        summary.get("anti_overfit_rule", ""),
+    ]
+    winner = result.get("winner")
+    if winner:
+        spec = winner.get("strategy_spec")
+        stress_summary = winner.get("stress", {}).get("summary", {})
+        lines.extend(
+            [
+                "",
+                f"Winner: {getattr(spec, 'name', '?')}",
+                f"Family: {getattr(getattr(spec, 'portfolio_family', None), 'value', '?')}",
+                f"Stress survival: {stress_summary.get('overall_confirmed', 0)}/{stress_summary.get('overall_runnable', 0)} ({stress_summary.get('overall_rate', 0):.0%})",
+                "Next: open a forward paper book only; do not tune this candidate from the same history.",
+            ]
+        )
+
+    console.print(Panel("\n".join(lines), title="Creative Strategy Lab — Anti-Overfit Gates"))
+
+    if result.get("research_brief"):
+        research_lines = [result["research_brief"], ""]
+        anomaly_facts = result.get("anomaly_facts") or []
+        if anomaly_facts:
+            research_lines.append("Mined facts supplied to generator:")
+            research_lines.extend(f"  - {fact}" for fact in anomaly_facts[:8])
+            research_lines.append("")
+        for h in result.get("hypotheses", []):
+            research_lines.extend(
+                [
+                    f"[{getattr(h, 'portfolio_index', '?')}] {getattr(h, 'title', '?')}",
+                    f"  Mechanism: {getattr(h, 'mechanism', '?')}",
+                    "  Evidence: " + "; ".join(getattr(h, "evidence_to_check", [])),
+                    "  Falsify: " + "; ".join(getattr(h, "falsification_tests", [])),
+                    "",
+                ]
+            )
+        console.print(Panel("\n".join(research_lines).rstrip(), title="Research Hypotheses"))
+
+    train_rows = []
+    for state in result.get("train", []):
+        spec = state.get("strategy_spec")
+        train_rows.append(
+            f"  {getattr(spec, 'name', '?'):<42} {_verdict_of_state(state) or 'unavailable'}"
+        )
+    if train_rows:
+        console.print(Panel("\n".join(train_rows), title="Train Screen"))
+
+    lockbox_rows = []
+    for state in result.get("lockbox", []):
+        spec = state.get("strategy_spec")
+        lockbox_rows.append(
+            f"  {getattr(spec, 'name', '?'):<52} {_verdict_of_state(state) or 'unavailable'}"
+        )
+    if lockbox_rows:
+        console.print(Panel("\n".join(lockbox_rows), title="Held-out Lockbox Retests"))
+
+
 def _print_exploration_result(console: Console, result: ExploreResult) -> None:
     candidates = result.get("candidates", [])
     winner_index = result.get("winner_index")

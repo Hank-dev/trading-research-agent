@@ -92,11 +92,31 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--creative-lab",
+        action="store_true",
+        help=(
+            "Run a creative but anti-overfit portfolio lab: pre-register a bounded "
+            "slate of structurally different strategies, train-screen them once, "
+            "lockbox every train survivor, then stress-test lockbox survivors. "
+            "Requires --assets, --start, --end. Uses --explore N as candidate cap "
+            "or defaults to 8."
+        ),
+    )
+    parser.add_argument(
+        "--research-slate",
+        action="store_true",
+        help=(
+            "With --creative-lab, use the positional idea as a research goal: first "
+            "write a research brief and falsifiable structural hypotheses, then "
+            "convert them into the frozen pre-registered slate."
+        ),
+    )
+    parser.add_argument(
         "--assets",
         type=str,
         default="",
         metavar="SYM1,SYM2,...",
-        help="Comma-separated portfolio assets for --portfolio-spec or --data-health.",
+        help="Comma-separated portfolio assets for --portfolio-spec, --creative-lab or --data-health.",
     )
     parser.add_argument(
         "--family",
@@ -189,6 +209,30 @@ def build_parser() -> argparse.ArgumentParser:
             "Preflight asset data availability, Tiingo cache coverage, quota/auth "
             "errors, and common aligned row count. Requires --assets, --start, --end."
         ),
+    )
+    parser.add_argument(
+        "--mine-anomalies",
+        action="store_true",
+        help=(
+            "Mine concrete empirical anomaly facts (lead/lag and regime-conditioned "
+            "asymmetries) for a supplied asset universe. Requires --assets, --start, --end."
+        ),
+    )
+    parser.add_argument(
+        "--event-followthrough",
+        action="store_true",
+        help=(
+            "Generate frozen delayed event-trigger strategies from mined event-followthrough "
+            "facts, then evaluate train/lockbox/neighborhood stress. Requires --assets, "
+            "--start, --end, --lockbox-pct. Uses --explore N as candidate cap or defaults to 6."
+        ),
+    )
+    parser.add_argument(
+        "--top-anomalies",
+        type=int,
+        default=12,
+        metavar="N",
+        help="Maximum anomaly facts to report for --mine-anomalies. Default: 12.",
     )
     parser.add_argument(
         "--paper-trade",

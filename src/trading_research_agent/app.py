@@ -39,6 +39,7 @@ from trading_research_agent.cli.render import (
     _print_history_suggestion,
     _print_history_detail_hint,
     _print_campaign_result,
+    _print_creative_lab_result,
     _print_exploration_result,
     _print_iterative_result,
     _print_state,
@@ -79,6 +80,12 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.data_health:
         return _run_data_health_mode(console, args, parser)
+
+    if args.mine_anomalies:
+        return _run_mine_anomalies_mode(console, args, parser)
+
+    if args.event_followthrough:
+        return _run_event_followthrough_mode(console, args, parser)
 
     if args.combined_book:
         return _run_combined_book_mode(console, args, parser)
@@ -147,6 +154,9 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.portfolio_batch:
         return _run_portfolio_batch_mode(console, args, parser)
+
+    if args.creative_lab:
+        return _run_creative_lab_mode(console, args, parser)
 
     if args.portfolio_spec:
         return _run_portfolio_spec_mode(console, args, parser)
@@ -324,6 +334,52 @@ def _run_portfolio_batch_mode(
     return 1 if had_errors else 0
 
 
+def _run_creative_lab_mode(
+    console: Console, args: Any, parser: argparse.ArgumentParser
+) -> int:
+    if args.portfolio or args.portfolio_spec or args.portfolio_batch or args.campaign:
+        parser.error(
+            "--creative-lab cannot be combined with --portfolio, --portfolio-spec, "
+            "--portfolio-batch or --campaign"
+        )
+    research_goal = (
+        args.idea
+        if args.research_slate and args.idea
+        else "Generate structurally motivated, falsifiable multi-asset portfolio hypotheses."
+        if args.research_slate
+        else None
+    )
+    if args.idea and not args.research_slate:
+        parser.error(
+            "--creative-lab only takes an idea when --research-slate is set; "
+            "otherwise it uses a fixed pre-registered palette"
+        )
+
+    assets = _parse_symbol_csv(args.assets)
+    if not assets or not args.start or not args.end:
+        parser.error("--creative-lab requires --assets, --start and --end")
+    if args.lockbox_pct <= 0:
+        parser.error("--creative-lab requires --lockbox-pct > 0 (e.g. --lockbox-pct 0.25)")
+
+    from trading_research_agent.workflows.creative_lab import run_creative_lab
+
+    try:
+        result = run_creative_lab(
+            assets=assets,
+            start=args.start,
+            end=args.end,
+            max_candidates=args.explore if args.explore > 0 else 8,
+            lockbox_pct=args.lockbox_pct,
+            research_goal=research_goal,
+        )
+    except Exception as exc:
+        console.print(Panel(f"Creative lab failed: {exc}", title="Creative Lab"))
+        return 1
+
+    _print_creative_lab_result(console, result)
+    return 0 if result.get("winner") is not None else 1
+
+
 def _run_macro_regime_mode(console: Console, args: Any, parser: argparse.ArgumentParser) -> int:
     from trading_research_agent.workflows.macro_regime import format_macro_regime, run_macro_regime
 
@@ -440,6 +496,68 @@ def _run_data_health_mode(
 
     _print_data_health_result(console, result)
     return 0 if result["runnable"] else 1
+
+
+def _run_mine_anomalies_mode(
+    console: Console, args: Any, parser: argparse.ArgumentParser
+) -> int:
+    if args.idea:
+        parser.error("--mine-anomalies does not take an idea; use --assets, --start, --end")
+    assets = _parse_symbol_csv(args.assets)
+    if not assets or not args.start or not args.end:
+        parser.error("--mine-anomalies requires --assets, --start and --end")
+    if args.top_anomalies < 1:
+        parser.error("--top-anomalies must be >= 1")
+
+    from trading_research_agent.workflows.anomaly_miner import (
+        format_anomaly_report,
+        mine_anomalies,
+    )
+
+    try:
+        result = mine_anomalies(assets, args.start, args.end, top_n=args.top_anomalies)
+    except Exception as exc:
+        console.print(Panel(f"Anomaly mining failed: {exc}", title="Anomaly Miner"))
+        return 1
+
+    console.print(Panel(format_anomaly_report(result), title="Market Anomaly Facts"))
+    return 0
+
+
+def _run_event_followthrough_mode(
+    console: Console, args: Any, parser: argparse.ArgumentParser
+) -> int:
+    if args.idea:
+        parser.error("--event-followthrough does not take an idea; use --assets, --start, --end")
+    assets = _parse_symbol_csv(args.assets)
+    if not assets or not args.start or not args.end:
+        parser.error("--event-followthrough requires --assets, --start and --end")
+    if args.lockbox_pct <= 0:
+        parser.error("--event-followthrough requires --lockbox-pct > 0 (e.g. 0.25)")
+
+    from trading_research_agent.workflows.event_followthrough import (
+        format_event_followthrough_lab,
+        learning_records_from_event_followthrough,
+        run_event_followthrough_lab,
+    )
+
+    try:
+        result = run_event_followthrough_lab(
+            assets,
+            args.start,
+            args.end,
+            max_candidates=args.explore if args.explore > 0 else 6,
+            lockbox_pct=args.lockbox_pct,
+        )
+    except Exception as exc:
+        console.print(Panel(f"Event-followthrough lab failed: {exc}", title="Event Followthrough"))
+        return 1
+
+    console.print(Panel(format_event_followthrough_lab(result), title="Event Followthrough Strategies"))
+    for record in learning_records_from_event_followthrough(result):
+        _log_history_safely(record)
+    _refresh_dashboard_safely(console)
+    return 0 if result["summary"]["robust_survivors"] > 0 else 1
 
 
 def _run_history_detail_mode(console: Console, args: Any) -> int:

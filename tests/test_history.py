@@ -226,6 +226,39 @@ def test_summarize_history_tallies_correctly() -> None:
     assert summary["passed_runs"][0]["asset"] == "QQQ"
 
 
+def test_summarize_history_tracks_structured_learnings() -> None:
+    records = [
+        {
+            "timestamp": "2026-05-06T00:00:00Z",
+            "mode": "event_followthrough",
+            "is_lockbox": False,
+            "asset": "BTC-USD",
+            "strategy_family": "event_followthrough",
+            "verdict": "winner",
+            "learning_status": "winner",
+            "lesson": "UUP weakness -> BTC survived stress.",
+        },
+        {
+            "timestamp": "2026-05-07T00:00:00Z",
+            "mode": "event_followthrough",
+            "is_lockbox": False,
+            "asset": "BTC-USD",
+            "strategy_family": "event_followthrough",
+            "verdict": "lockbox_loser",
+            "learning_status": "lockbox_loser",
+            "lesson": "TLT strength -> BTC failed lockbox.",
+        },
+    ]
+
+    summary = history.summarize_history(records)
+    assert summary["by_learning_status"] == {"winner": 1, "lockbox_loser": 1}
+    assert summary["learning_records"][0]["timestamp"] == "2026-05-07T00:00:00Z"
+    text = history.format_summary(summary)
+    assert "Structured learnings" in text
+    assert "Recent lessons" in text
+    assert "UUP weakness" in text
+
+
 def test_summarize_history_handles_empty() -> None:
     summary = history.summarize_history([])
     assert summary["total_trials"] == 0
